@@ -9,9 +9,16 @@ use ${temp}/tstar_03, clear
 keep if ty == 2018
 
 maptile village_csok, geo(ksh4) cutv(0.5) rangecolor("$color1" "$color2")
-
 graph export ${output}/map_village_csok.pdf, as(pdf) replace
 
+
+use ${temp}/tstar_03, clear
+
+keep if ty == 2018
+keep if inrange(de01_2018, 2000, 8000)
+
+maptile village_csok, geo(ksh4) cutv(0.5) rangecolor("$color1" "$color2")
+graph export ${output}/map_village_csok.pdf, as(pdf) replace
 
 
 /*==============================================================================
@@ -261,6 +268,41 @@ local upper = 5000 + $H_level
 
 keep if inrange(de01_2018, `lower', `upper')
 gen TREAT = (de01_2018 < 5000)
+
+#d ;
+
+	twoway (hist ln_hp if TREAT == 1 & ty == 2018, 
+			start(2) width(0.2) color("$color1"))
+		(hist ln_hp if TREAT == 0  & ty == 2018, 
+			start(2) width(0.2) 
+			fcolor(none) lcolor(black)),
+		 legend(order(1 "Treated" 2 "Control" ))
+		 graphregion(color(white))
+		 xtitle("Log house price, 2018")
+	;		
+			
+
+#d cr
+
+#d ;
+
+	twoway (hist ln_hp if TREAT == 1 & ty == 2021, 
+			start(2) width(0.2) color("$color1"))
+		(hist ln_hp if TREAT == 0  & ty == 2021, 
+			start(2) width(0.2) 
+			fcolor(none) lcolor(black)),
+		 legend(order(1 "Treated" 2 "Control" ))
+		 graphregion(color(white))
+		 xtitle("Log house price, 2021")
+	;		
+			
+
+#d cr
+
+twoway (histogram write if female==1, start(30) width(5) color(green)) ///
+       (histogram write if female==0, start(30) width(5) ///
+	   fcolor(none) lcolor(black)), legend(order(1 "Female" 2 "Male" ))
+
 
 collapse (mean) ln_hp total_price [aw = total_transaction], by(TREAT ty)
 ren ln_hp ln_hp_
@@ -618,7 +660,7 @@ reshape wide ln_income_, i(ty) j(TREAT)
 
 
 
-
+/*
 
 
 
