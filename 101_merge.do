@@ -1,5 +1,19 @@
 
 
+use ${hp}/house_price_settlement, clear
+
+gen budapest = strpos(telnev_bpker, "Budapest")
+drop if budapest == 1
+
+ren ksh4_bpker ksh4
+ren year ty
+drop telnev_bpker
+drop budapest
+
+tempfile hp
+save `hp' 
+
+
 use ${disadv}/komplex_2014, clear
 keep jaras_kod komplex_2014
 tempfile komplex
@@ -77,10 +91,12 @@ merge 1:1 tazon ev using ${tstar}/eu, nogen keep(1 3) keepusing(eu*)
 merge 1:1 tazon ev using ${tstar}/la, nogen keep(1 3) keepusing(la*)
 
 gen ksh4 = tazon
+gen ty = ev
 
 merge m:1 ksh4 using `educ', nogen keep(1 3)
 merge m:1 ksh4 using `home', nogen keep(1 3)
 merge m:1 ksh4 using `komplex_ksh4', nogen keep(1 3)
+merge 1:1 ksh4 ty using `hp', nogen keep(1 3)
 
 lab lang en
 

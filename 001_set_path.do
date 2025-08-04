@@ -18,6 +18,8 @@ global live_births ${data}/Aggregate/Live_birth/04_final
 global disadv ${data}/komplex_mutato_2014/04_final
 global village_csok ${data}/village_csok
 
+global hp ${data}/house_price/04_final
+
 global human_fertility ${data}/human_fertility
 
 

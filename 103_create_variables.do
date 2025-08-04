@@ -1,7 +1,6 @@
 
 use  ${temp}/tstar_02, clear
 
-ren ev ty
 
 foreach X of varlist de3* de55 {
 	replace `X' = 0 if `X' == .
@@ -15,6 +14,8 @@ gen U_rate = mn01 / de09
 gen income = tx02 / tx01
 gen ln_income = ln(income)
 gen migration_gap = (de62 - de63) / de01
+gen ln_hp = ln(total_price)
+gen transaction_per_pop = total_transaction / de01
 
 foreach YEAR in 2003 2015 2018 {
 	gen tmp_de01_`YEAR' = de01 if ty == `YEAR'

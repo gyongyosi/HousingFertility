@@ -69,11 +69,29 @@ graph export ${output}/manipulation_change.pdf, as(pdf) replace
 
 
 
+/*==============================================================================
+	calculate optimal bandwith
+==============================================================================*/
+
+use ${temp}/tstar_03, clear
+
+keep if ty == 2018
+drop if ksh4 == 1357
+
+rdbwselect SH_t_1 de01_2018, c(5000) weights(de01_2018)
+
+global H_level = `e(h_mserd)'
+global B_level = `e(b_mserd)' 
+
+rdbwselect village_csok pop_change_percent, c(0) weights(de01_2018)
+
+
+global H_change = `e(h_mserd)'
+global B_change = `e(b_mserd)'
 
 
 /*==============================================================================
 	create balance figures (level)
-	
 ==============================================================================*/
 
 use ${temp}/tstar_03, clear
@@ -83,7 +101,7 @@ keep if inrange(de01_2018, 0, 10000)
 
 local bin_size = 100
 local weight = de01_2018
-local vars_to_use "SH_t_1 SH_t_2 SH_t_3 SH_t_4 ln_income komplex village_csok sh_homeownership_b fertility U_rate"
+local vars_to_use "SH_t_1 SH_t_2 SH_t_3 SH_t_4 ln_income komplex_2014 village_csok sh_homeownership_b fertility U_rate ln_hp transaction_per_pop"
 
 gen de01_2018_bin = floor(de01_2018 / `bin_size') * `bin_size'
 
@@ -127,6 +145,8 @@ foreach OUTCOME of varlist `vars_to_use' {
 }
 
 
+
+
 /*==============================================================================
 	create balance figures (change)
 	
@@ -140,7 +160,7 @@ keep if inrange(pop_change_percent, -0.5, 0.5)
 
 local bin_size = 0.01
 local weight = de01_2018
-local vars_to_use "SH_t_1 SH_t_2 SH_t_3 SH_t_4 ln_income village_csok sh_homeownership_b fertility U_rate"
+local vars_to_use "SH_t_1 SH_t_2 SH_t_3 SH_t_4 ln_income komplex_2014 village_csok sh_homeownership_b fertility U_rate ln_hp transaction_per_pop"
 
 gen pop_change_percent_bin = floor(pop_change_percent / `bin_size') * `bin_size'
 
@@ -183,44 +203,131 @@ foreach OUTCOME of varlist `vars_to_use' {
 
 }
 
+
 /*==============================================================================
-	calculate optimal bandwith
+	create balance table (level)
+==============================================================================*/
+
+use ${temp}/tstar_03, clear
+
+keep if ty == 2018
+keep if inrange(de01_2018, 0, 10000)
+
+eststo clear
+eststo q_1 : rdrobust SH_t_1 de01_2018, c(5000) all weights(de01_2018) h($H_level) b($B_level)
+eststo q_2 : rdrobust SH_t_2 de01_2018, c(5000) all weights(de01_2018) h($H_level) b($B_level)
+eststo q_3 : rdrobust SH_t_3 de01_2018, c(5000) all weights(de01_2018) h($H_level) b($B_level)
+eststo q_4 : rdrobust SH_t_4 de01_2018, c(5000) all weights(de01_2018) h($H_level) b($B_level)
+eststo q_5 : rdrobust ln_income de01_2018, c(5000) all weights(de01_2018) h($H_level) b($B_level)
+eststo q_6 : rdrobust U_rate de01_2018, c(5000) all weights(de01_2018) h($H_level) b($B_level)
+eststo q_7 : rdrobust sh_homeownership_b de01_2018, c(5000) all weights(de01_2018) h($H_level) b($B_level)
+eststo q_8 : rdrobust ln_hp de01_2018, c(5000) all weights(de01_2018) h($H_level) b($B_level)
+eststo q_9 : rdrobust transaction_per_po de01_2018, c(5000) all weights(de01_2018) h($H_level) b($B_level)
+eststo q_10 : rdrobust fertility de01_2018, c(5000) all weights(de01_2018) h($H_level) b($B_level)
+
+
+
+/*==============================================================================
+	create balance table (change)
 ==============================================================================*/
 
 use ${temp}/tstar_03, clear
 
 keep if ty == 2018
 
+eststo clear
+eststo q_1 : rdrobust SH_t_1 pop_change_percent, c(0) all weights(de01_2018) h($H_change) b($B_change)
+eststo q_2 : rdrobust SH_t_2 pop_change_percent, c(0) all weights(de01_2018) h($H_change) b($B_change)
+eststo q_3 : rdrobust SH_t_3 pop_change_percent, c(0) all weights(de01_2018) h($H_change) b($B_change)
+eststo q_4 : rdrobust SH_t_4 pop_change_percent, c(0) all weights(de01_2018) h($H_change) b($B_change)
+eststo q_5 : rdrobust ln_income pop_change_percent, c(0) all weights(de01_2018) h($H_change) b($B_change)
+eststo q_6 : rdrobust U_rate pop_change_percent, c(0) all weights(de01_2018) h($H_change) b($B_change)
+eststo q_7 : rdrobust sh_homeownership_b pop_change_percent, c(0) all weights(de01_2018) h($H_change) b($B_change)
+eststo q_8 : rdrobust ln_hp pop_change_percent, c(0) all weights(de01_2018) h($H_change) b($B_change)
+eststo q_9 : rdrobust transaction_per_po pop_change_percent, c(0) all weights(de01_2018) h($H_change) b($B_change)
+eststo q_10 : rdrobust fertility pop_change_percent, c(0) all weights(de01_2018) h($H_change) b($B_change)
 
-rdbwselect village_csok de01_2018, c(5000)
-
-
-rdbwselect village_csok pop_change_percent, c(0)
 
 
 
 /*==============================================================================
-	eligibility by disadv - settlement size 
+	average house price in TREATED vs CONTROL settlements (within BW)
 ==============================================================================*/
 
 use ${temp}/tstar_03, clear
 
+local lower = 5000 - $H_level
+local upper = 5000 + $H_level
 
-keep if ty == 2018
-keep if inrange(de01, 0, 10000)
+keep if inrange(de01_2018, `lower', `upper')
+gen TREAT = (de01_2018 < 5000)
+
+collapse (mean) ln_hp total_price [aw = total_transaction], by(TREAT ty)
+ren ln_hp ln_hp_
+ren total_price total_price_
+reshape wide ln_hp_ total_price_, i(ty) j(TREAT)
 
 #d ;
-	twoway 
-		(scatter komplex de01 if village_csok == 1, mcolor("$color1"))
-		(scatter komplex de01 if village_csok == 0, mcolor("$color2")),
-			ytitle("Index of disadvantaged status of district")
-			legend(order(1 "Eligible" 2 "Non-eligible"))
-		
-		
-	;
-		
+	twoway connected ln_hp_1 ln_hp_0 ty, 
+		legend(order(1 "Treated" 2 "Control"))
+		graphregion(color(white))
+		lpattern(solid _)
+		lcolor("$color1" "$color2")
+		mcolor("$color1" "$color2")
+		xtitle("")
+		ytitle("Average log house price")
+		;
 #d cr
-graph export ${output}/rdd_komplex_de01_eligibility.pdf, as(pdf) replace
+
+
+
+#d ;
+	twoway connected total_price_1 total_price_0 ty, 
+		legend(order(1 "Treated" 2 "Control"))
+		graphregion(color(white))
+		lpattern(solid _)
+		lcolor("$color1" "$color2")
+		mcolor("$color1" "$color2")
+		xtitle("")
+		ytitle("Average house price")
+		;
+#d cr
+
+
+
+
+/*==============================================================================
+	average births per women (15-49) in TREATED vs CONTROL settlements (within BW)
+==============================================================================*/
+
+use ${temp}/tstar_03, clear
+
+local lower = 5000 - $H_level
+local upper = 5000 + $H_level
+
+keep if inrange(de01_2018, `lower', `upper')
+gen TREAT = (de01_2018 < 5000)
+
+collapse (mean) fertility [aw = women_childbearing_age], by(TREAT ty)
+ren fertility fertility_
+reshape wide fertility_ , i(ty) j(TREAT)
+
+#d ;
+	twoway connected fertility_1 fertility_0 ty, 
+		legend(order(1 "Treated" 2 "Control"))
+		graphregion(color(white))
+		lpattern(solid _)
+		lcolor("$color1" "$color2")
+		mcolor("$color1" "$color2")
+		xtitle("")
+		ytitle("Average number of births per women aged 15-49")
+		;
+#d cr
+
+
+
+
+
 
 /*==============================================================================
 	by population change between 2003-2018
