@@ -251,7 +251,7 @@ eststo q_10 : rdrobust fertility pop_change_percent, c(0) all weights(de01_2018)
 
 
 /*==============================================================================
-	average house price in TREATED vs CONTROL settlements (within BW)
+	average house price in TREATED vs CONTROL settlements (within BW, level)
 ==============================================================================*/
 
 use ${temp}/tstar_03, clear
@@ -295,9 +295,126 @@ reshape wide ln_hp_ total_price_, i(ty) j(TREAT)
 
 
 
+/*==============================================================================
+	average house price in TREATED vs CONTROL settlements (within BW, change)
+==============================================================================*/
+
+use ${temp}/tstar_03, clear
+
+local lower = 0 - $H_change
+local upper = 0 + $H_change
+
+keep if inrange(pop_change_percent, `lower', `upper')
+gen TREAT = (pop_change_percent < 0)
+
+collapse (mean) ln_hp total_price [aw = total_transaction], by(TREAT ty)
+ren ln_hp ln_hp_
+ren total_price total_price_
+reshape wide ln_hp_ total_price_, i(ty) j(TREAT)
+
+#d ;
+	twoway connected ln_hp_1 ln_hp_0 ty, 
+		legend(order(1 "Treated" 2 "Control"))
+		graphregion(color(white))
+		lpattern(solid _)
+		lcolor("$color1" "$color2")
+		mcolor("$color1" "$color2")
+		xtitle("")
+		ytitle("Average log house price")
+		;
+#d cr
+
+
+
+#d ;
+	twoway connected total_price_1 total_price_0 ty, 
+		legend(order(1 "Treated" 2 "Control"))
+		graphregion(color(white))
+		lpattern(solid _)
+		lcolor("$color1" "$color2")
+		mcolor("$color1" "$color2")
+		xtitle("")
+		ytitle("Average house price")
+		;
+#d cr
+
+
+
+
+
 
 /*==============================================================================
-	average births per women (15-49) in TREATED vs CONTROL settlements (within BW)
+	number of transactions in TREATED vs CONTROL settlements (within BW, level)
+==============================================================================*/
+
+use ${temp}/tstar_03, clear
+
+keep if inrange(ty, 2015, .)
+
+local lower = 5000 - $H_level
+local upper = 5000 + $H_level
+
+keep if inrange(de01_2018, `lower', `upper')
+gen TREAT = (de01_2018 < 5000)
+
+collapse (mean) transaction_per_pop [aw = de01], by(TREAT ty)
+ren transaction_per_pop transaction_per_pop_
+reshape wide transaction_per_pop_, i(ty) j(TREAT)
+
+#d ;
+	twoway connected transaction_per_pop_1 transaction_per_pop_0 ty, 
+		legend(order(1 "Treated" 2 "Control"))
+		graphregion(color(white))
+		lpattern(solid _)
+		lcolor("$color1" "$color2")
+		mcolor("$color1" "$color2")
+		xtitle("")
+		ytitle("Number of transactions relative to population")
+		;
+#d cr
+
+
+
+
+
+/*==============================================================================
+	number of transactions in TREATED vs CONTROL settlements (within BW, change)
+==============================================================================*/
+
+
+use ${temp}/tstar_03, clear
+
+keep if inrange(ty, 2015, .)
+
+
+local lower = 0 - $H_change
+local upper = 0 + $H_change
+
+keep if inrange(pop_change_percent, `lower', `upper')
+gen TREAT = (pop_change_percent < 0)
+
+
+collapse (mean) transaction_per_pop [aw = de01], by(TREAT ty)
+ren transaction_per_pop transaction_per_pop_
+reshape wide transaction_per_pop_, i(ty) j(TREAT)
+
+#d ;
+	twoway connected transaction_per_pop_1 transaction_per_pop_0 ty, 
+		legend(order(1 "Treated" 2 "Control"))
+		graphregion(color(white))
+		lpattern(solid _)
+		lcolor("$color1" "$color2")
+		mcolor("$color1" "$color2")
+		xtitle("")
+		ytitle("Number of transactions relative to population")
+		;
+#d cr
+
+
+
+
+/*==============================================================================
+	average births per women (15-49) in TREATED vs CONTROL settlements (within BW, level)
 ==============================================================================*/
 
 use ${temp}/tstar_03, clear
@@ -326,186 +443,180 @@ reshape wide fertility_ , i(ty) j(TREAT)
 
 
 
-
-
-
 /*==============================================================================
-	by population change between 2003-2018
+	average births per women (15-49) in TREATED vs CONTROL settlements (within BW, change)
 ==============================================================================*/
-
 
 use ${temp}/tstar_03, clear
 
+local lower = 0 - $H_change
+local upper = 0 + $H_change
 
-local vars_to_use "SH_t_1 SH_t_2 SH_t_3 SH_t_4 ln_income village_csok sh_homeownership_b fertility U_rate"
-local pop de01
-
-keep if ty == 2003 | ty == 2018
-sort tazon ty
-by tazon: gen pop_change = `pop' - `pop'[_n-1]
-by tazon: gen pop_change_percent = 100 * (`pop' - `pop'[_n-1]) / `pop'[_n-1]
-keep if ty == 2018
-keep ty tazon village_csok `pop' pop_change pop_change_percent `vars_to_use'
+keep if inrange(pop_change_percent, `lower', `upper')
+gen TREAT = (pop_change_percent < 0)
 
 
-* Creating bins for population change
-gen pop_change_percent_bin = floor(pop_change_percent / 2.5) * 2.5
+collapse (mean) fertility [aw = women_childbearing_age], by(TREAT ty)
+ren fertility fertility_
+reshape wide fertility_ , i(ty) j(TREAT)
 
-
-tempfile binned 
-save `binned'
-
-* Aggregating data at bin level
-collapse (mean) pop_change pop_change_percent `vars_to_use' [pweight = `pop'], by(pop_change_percent_bin)
-
-* Rename aggregated proportions of education levels for bin level
-foreach X of varlist `vars_to_use' {
-	ren `X' `X'_bin
-}
-
-tempfile collapsed
-save `collapsed'
-
-* Reload the binned dataset
-use `binned', clear
-
-* Merge with collapsed data
-merge m:1 pop_change_percent_bin using `collapsed', nogen keep(1 3)
-
-
-keep if inrange(pop_change_percent, -50, 50)
-
-
-lab var SH_t_1 "share of grade 1-8 (census 2011)"
-lab var SH_t_2 "share of vocational (census 2011)"
-lab var SH_t_3 "share of high school (census 2011)"
-lab var SH_t_4 "share of college+uni (census 2011)"
-lab var ln_income "log income per taxpayer"
-lab var sh_homeownership_b "Homeownership rate"
-lab var fertility "newborns per women 15-49"
-lab var U_rate "Unemployment"
-lab var village_csok "Village CSOK eligible"
-
-
-foreach OUTCOME of varlist `vars_to_use' {
-
-	local label : variable label `OUTCOME'
-
-
-	#d ;
-	twoway 	(lpolyci `OUTCOME' pop_change_percent_bin if pop_change_percent < 0 [aw = `pop'], degree(1) lcolor("$color1")) 
-		(lpolyci `OUTCOME' pop_change_percent_bin if pop_change_percent >= 0 [aw = `pop'], degree(1) lcolor("$color2")) 
-		(scatter `OUTCOME'_bin pop_change_percent_bin if pop_change_percent < 0, mcolor("$color1") ) 
-		(scatter `OUTCOME'_bin pop_change_percent_bin if pop_change_percent >= 0, mcolor("$color2") ), 
-			graphregion(color(white)) 
-			xtitle("Population Change (%)") ytitle("`label'") 
-			legend(off)
+#d ;
+	twoway connected fertility_1 fertility_0 ty, 
+		legend(order(1 "Treated" 2 "Control"))
+		graphregion(color(white))
+		lpattern(solid _)
+		lcolor("$color1" "$color2")
+		mcolor("$color1" "$color2")
+		xtitle("")
+		ytitle("Average number of births per women aged 15-49")
 		;
-	#d cr
-	graph export ${output}/rdd_pop_change_`OUTCOME'.pdf, as(pdf) replace
+#d cr
 
-}
+
+
 
 
 
 /*==============================================================================
-	by population in 2018
+	average economic conditions in TREATED vs CONTROL settlements (within BW, level)
 ==============================================================================*/
+
+
+* 1) unemployment
 
 use ${temp}/tstar_03, clear
 
+local lower = 5000 - $H_level
+local upper = 5000 + $H_level
 
-local vars_to_use "SH_t_1 SH_t_2 SH_t_3 SH_t_4 ln_income village_csok sh_homeownership_b fertility U_rate"
-local pop de01
-
-keep if ty == 2018
-keep ty tazon `pop' `vars_to_use'
-
-
-* Creating bins for population change
-gen pop_bin = floor(`pop' / 250) * 250
-
-
-tempfile binned 
-save `binned'
-
-* Aggregating data at bin level
-collapse (mean) `vars_to_use' [pweight = `pop'], by(pop_bin)
-
-* Rename aggregated proportions of education levels for bin level
-foreach X of varlist `vars_to_use' {
-	ren `X' `X'_bin
-}
-
-tempfile collapsed
-save `collapsed'
-
-* Reload the binned dataset
-use `binned', clear
-
-* Merge with collapsed data
-merge m:1 pop_bin using `collapsed', nogen keep(1 3)
-
-
-keep if inrange(`pop', 0, 30000)
-
-
-lab var SH_t_1 "share of grade 1-8 (census 2011)"
-lab var SH_t_2 "share of vocational (census 2011)"
-lab var SH_t_3 "share of high school (census 2011)"
-lab var SH_t_4 "share of college+uni (census 2011)"
-lab var ln_income "log income per taxpayer"
-lab var sh_homeownership_b "Homeownership rate"
-lab var fertility "newborns per women 15-49"
-lab var U_rate "Unemployment"
-lab var village_csok "Village CSOK eligible"
+keep if inrange(de01_2018, `lower', `upper')
+gen TREAT = (de01_2018 < 5000)
 
 
 
-foreach OUTCOME of varlist `vars_to_use' {
+collapse (mean) U_rate [aw = de09], by(TREAT ty)
+ren U_rate U_rate_
+reshape wide U_rate_, i(ty) j(TREAT)
 
-	local label : variable label `OUTCOME'
 
-
-	#d ;
-	twoway 	(lpolyci `OUTCOME' pop_bin if `pop' <= 5000 [aw = `pop'], degree(1) lcolor("$color1")) 
-		(lpolyci `OUTCOME' pop_bin if `pop' > 5000 [aw = `pop'], degree(1) lcolor("$color2")) 
-		(scatter `OUTCOME'_bin pop_bin if `pop' <= 5000, mcolor("$color1") ) 
-		(scatter `OUTCOME'_bin pop_bin if `pop' > 5000, mcolor("$color2") ), 
-			graphregion(color(white)) 
-			xtitle("Population") ytitle("`label'") 
-			legend(off)
+#d ;
+	twoway connected U_rate_1 U_rate_0 ty , 
+		legend(order(1 "Treated" 2 "Control"))
+		graphregion(color(white))
+		lpattern(solid _)
+		lcolor("$color1" "$color2")
+		mcolor("$color1" "$color2")
+		xtitle("")
+		ytitle("Unemployment rate")
 		;
-	#d cr
-	graph export ${output}/rdd_pop5000_`OUTCOME'.pdf, as(pdf) replace
+#d cr
 
-}
+
+* 2) log income
+use ${temp}/tstar_03, clear
+
+keep if inrange(ty, 2008, .)
+
+local lower = 5000 - $H_level
+local upper = 5000 + $H_level
+
+keep if inrange(de01_2018, `lower', `upper')
+gen TREAT = (de01_2018 < 5000)
+
+
+
+collapse (mean) ln_income [aw = de01], by(TREAT ty)
+ren ln_income ln_income_
+reshape wide ln_income_, i(ty) j(TREAT)
+
+
+#d ;
+	twoway connected ln_income_1 ln_income_0 ty , 
+		legend(order(1 "Treated" 2 "Control"))
+		graphregion(color(white))
+		lpattern(solid _)
+		lcolor("$color1" "$color2")
+		mcolor("$color1" "$color2")
+		xtitle("")
+		ytitle("Log income per capita")
+		;
+#d cr
+
+
+
+
 
 
 /*==============================================================================
-	map of village CSOK eligible settlements
+	average economic conditions in TREATED vs CONTROL settlements (within BW, change)
 ==============================================================================*/
+
+
+* 1) unemployment
 
 use ${temp}/tstar_03, clear
 
-keep if ty == 2018
-maptile village_csok, geo(ksh4) rangecolor("$color1" "$color2") cutv(0.5)
-graph export ${output}/map_village_csok.pdf, as(pdf) replace
+keep if inrange(ty, 2008, .)
+
+local lower = 0 - $H_change
+local upper = 0 + $H_change
+
+keep if inrange(pop_change_percent, `lower', `upper')
+gen TREAT = (pop_change_percent < 0)
+
+collapse (mean) U_rate [aw = de09], by(TREAT ty)
+ren U_rate U_rate_
+reshape wide U_rate_, i(ty) j(TREAT)
 
 
-/*==============================================================================
-	bw selection
-==============================================================================*/
+#d ;
+	twoway connected U_rate_1 U_rate_0 ty , 
+		legend(order(1 "Treated" 2 "Control"))
+		graphregion(color(white))
+		lpattern(solid _)
+		lcolor("$color1" "$color2")
+		mcolor("$color1" "$color2")
+		xtitle("")
+		ytitle("Unemployment rate")
+		;
+#d cr
 
+
+* 2) log income
 use ${temp}/tstar_03, clear
-keep if ty == 2018
 
-rddensity de01 , c(5000)
+keep if inrange(ty, 2008, .)
+
+local lower = 0 - $H_change
+local upper = 0 + $H_change
+
+keep if inrange(pop_change_percent, `lower', `upper')
+gen TREAT = (pop_change_percent < 0)
+
+collapse (mean) ln_income [aw = de01], by(TREAT ty)
+ren ln_income ln_income_
+reshape wide ln_income_, i(ty) j(TREAT)
 
 
-rdbwselect fertility de01, c(5000)
+#d ;
+	twoway connected ln_income_1 ln_income_0 ty , 
+		legend(order(1 "Treated" 2 "Control"))
+		graphregion(color(white))
+		lpattern(solid _)
+		lcolor("$color1" "$color2")
+		mcolor("$color1" "$color2")
+		xtitle("")
+		ytitle("Log income per capita")
+		;
+#d cr
 
-rdbwselect fertility de01 if inrange(de01, 0, 30000), c(5000)
+
+
+
+
+
+
+
 
 
 
