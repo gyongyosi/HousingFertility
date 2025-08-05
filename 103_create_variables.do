@@ -9,6 +9,12 @@ foreach X of varlist de3* de55 {
 gen ln_de01 = ln(de01)
 gen ln_de55 = ln(de55)
 gen women_childbearing_age = de30 + de31 + de32 + de33 + de34 + de35
+gen women_15_19 = de30 + de31 + de32 
+gen women_20_29 = de33 
+gen women_30_39 = de34 
+gen women_40_49 = de35 
+
+
 gen fertility = de55 / women_childbearing_age
 gen U_rate = mn01 / de09
 gen income = tx02 / tx01

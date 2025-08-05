@@ -97,6 +97,77 @@ global H_change = `e(h_mserd)'
 global B_change = `e(b_mserd)'
 
 
+
+/*==============================================================================
+	distribution of women between TREAT and CONTROL
+==============================================================================*/
+
+use ${temp}/tstar_03, clear
+
+local lower = 5000 - $H_level
+local upper = 5000 + $H_level
+
+keep if ty == 2018
+
+keep if inrange(de01_2018, `lower', `upper')
+gen TREAT = (de01_2018 < 5000)
+
+sort de01_2018
+foreach X of varlist women* {
+	gen cdf_`X' = `X' in 1
+	replace cdf_`X' = cdf_`X'[_n-1] + `X' if cdf_`X' == .
+	egen max_`X' = max(cdf_`X')
+	replace cdf_`X' = cdf_`X' / max_`X'
+}
+
+#d ;
+	twoway line cdf_women_child de01_2018, 
+		xline(5000)
+		graphregion(color(white))
+		ytitle("Women (15-49)")
+		xtitle("Population 2018")
+		;
+#d cr
+
+
+#d ;
+	twoway line cdf_women_15 de01_2018, 
+		xline(5000)
+		graphregion(color(white))
+		ytitle("Women (15-19)")
+		xtitle("Population 2018")
+		;
+#d cr
+
+#d ;
+	twoway line cdf_women_20 de01_2018, 
+		xline(5000)
+		graphregion(color(white))
+		ytitle("Women (20-29)")
+		xtitle("Population 2018")
+		;
+#d cr
+
+#d ;
+	twoway line cdf_women_30 de01_2018, 
+		xline(5000)
+		graphregion(color(white))
+		ytitle("Women (30-39)")
+		xtitle("Population 2018")
+		;
+#d cr
+#d ;
+	twoway line cdf_women_40 de01_2018, 
+		xline(5000)
+		graphregion(color(white))
+		ytitle("Women (40-49)")
+		xtitle("Population 2018")
+		;
+#d cr
+
+
+twoway line cdf_women_* de01_2018, 
+
 /*==============================================================================
 	create balance figures (level)
 ==============================================================================*/
@@ -298,10 +369,6 @@ gen TREAT = (de01_2018 < 5000)
 			
 
 #d cr
-
-twoway (histogram write if female==1, start(30) width(5) color(green)) ///
-       (histogram write if female==0, start(30) width(5) ///
-	   fcolor(none) lcolor(black)), legend(order(1 "Female" 2 "Male" ))
 
 
 collapse (mean) ln_hp total_price [aw = total_transaction], by(TREAT ty)
@@ -514,6 +581,36 @@ reshape wide fertility_ , i(ty) j(TREAT)
 		;
 #d cr
 
+
+
+
+/*==============================================================================
+	number of births in TREATED vs CONTROL settlements (within BW, level)
+==============================================================================*/
+
+use ${temp}/tstar_03, clear
+
+local lower = 5000 - $H_level
+local upper = 5000 + $H_level
+
+keep if inrange(de01_2018, `lower', `upper')
+gen TREAT = (de01_2018 < 5000)
+
+collapse (sum) de55 [aw = women_childbearing_age], by(TREAT ty)
+ren de55 de55_
+reshape wide de55_ , i(ty) j(TREAT)
+
+#d ;
+	twoway connected de55_1 de55_0 ty, 
+		legend(order(1 "Treated" 2 "Control"))
+		graphregion(color(white))
+		lpattern(solid _)
+		lcolor("$color1" "$color2")
+		mcolor("$color1" "$color2")
+		xtitle("")
+		ytitle("Number of births")
+		;
+#d cr
 
 
 
