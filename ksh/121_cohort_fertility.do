@@ -61,3 +61,20 @@ reshape wide f_cumulative_ , i(age) j(cohort)
 
 
 
+#d ;
+	line f_cumulative_1975 f_cumulative_1976 f_cumulative_1977 f_cumulative_1978 f_cumulative_1979 age ,
+		lcolor($color1 $color2 $color3 $color4 $color5)
+		lpattern(solid _ - solid _)
+		graphregion(color(white))
+		legend(order(1 "Cohort: 1975" 2 "1976" 3 "1977" 4 "1978" 5 "1979"))
+		xtitle("Age")
+		ytitle("Cumulative average number of kids per women")
+		;
+#d cr
+
+
+
+/*------------------------------------------------------------------------------
+	
+------------------------------------------------------------------------------*/
+

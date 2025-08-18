@@ -1,4 +1,12 @@
 
+use ${tstar}/settlement_size, clear
+
+gen tmp_de01_2018 = de01 if ty == 2018
+egen de01_2018 = mean(tmp_de01_2018), by(ksh4)
+drop tmp_de01_2018
+
+tempfile settlement_size
+save `settlement_size'
 
 
 use ${live_birth}/Szuletes_2023_minta_allomany, clear
@@ -12,6 +20,10 @@ gen ID_mother = _n
 
 gen baby_birth_date = mdy(esho, esnap, esev)
 format baby_birth_date %td
+
+gen ty = yofd(baby_birth_date)
+gen tm = mofd(baby_birth_date)
+format tm %tm
 
 gen father_birth_date = mdy(fiszho, fisznap, fiszev)
 format father_birth_date %td
@@ -124,6 +136,7 @@ foreach X in no fi {
 
 }
 
+/*
 01	aktív
 02	fogl. nyugdíjas, járadékos
 03	fogl. GYES
@@ -150,7 +163,39 @@ foreach X in no fi {
 11	egyéb eltartott
 99	ismeretlen
 
+*/
 
+* occupation codes 
+foreach X in no fi {
+
+	if "`X'" == "no" {
+		local Y = "mother"
+	}
+	else if "`X'" == "fi" {
+		local Y = "father"
+	}
+
+	gen `Y'_occ = .
+	replace `Y'_occ = `X'fogl
+	replace `Y'_occ = `X'fogl11 if `Y'_occ == .
+	replace `Y'_occ = floor(`Y'_occ/1000)	
+}
+
+
+
+
+
+
+gen below2500 = (2500 > suly)
+
+gen ksh4_bpker = notart
+replace ksh4_bpker = nolak if ksh4_bpker == .
+
+merge m:1 ksh4_bpker using ${village_csok}/village_csok, nogen keep(1 3)
+ren village_csok village_csok_mother
+replace village_csok_mother = 0 if village_csok_mother == . & ksh4_bpker != .
+
+merge m:1 ksh4 ty using `settlement_size', nogen keep(1 3)
 
 save ${temp}/live_birth_001, replace
 
