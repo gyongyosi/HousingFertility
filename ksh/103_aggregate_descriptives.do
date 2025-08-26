@@ -65,3 +65,23 @@ collapse (mean) age_tm , by(ty)
 		;
 #d cr
 
+
+
+
+* is apgrar meaningful?
+use ${temp}/live_birth_001, clear
+
+
+keep if inlist(ty, 2014, 2021) 
+
+sum apgar, d 
+
+#d ;
+	twoway (hist apgar if ty == 2014, start(0) width(1) color(green))
+		(hist apgar if ty == 2019, start(0) width(1) fcolor(none) lcolor(black)),
+		graphregion(color(white))
+		legend(order(1 "2014" 2 "2021" ))
+	;
+#d cr
+
+

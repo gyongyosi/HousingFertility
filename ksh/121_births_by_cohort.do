@@ -1,6 +1,6 @@
 
 /*------------------------------------------------------------------------------
-	plot fertility by cohort
+	plot births by cohort
 ------------------------------------------------------------------------------*/
 
 use ${aggr_demo}/aggregate_demography, clear
@@ -37,24 +37,29 @@ drop if cohort == .
 
 merge m:1 cohort age using `cohortsize', nogen keep(1 3)
 
-gen f = births / N_women
-sort cohort age
-bys cohort (age): gen f_cumulative_ = sum(f)
+gen f0 = births 
+gen f1 = births / N_women
 
-reshape wide f_cumulative_ , i(age) j(cohort)
+sort cohort age
+forval i = 0(1)1 {
+	bys cohort (age): gen f`i'_cumulative_ = sum(f`i')
+}
+
+
+reshape wide f* , i(age) j(cohort)
 
 
 
 
 
 #d ;
-	line f_cumulative_1970 f_cumulative_1971 f_cumulative_1972 f_cumulative_1973 f_cumulative_1974 age ,
+	line f0_cumulative_1970 f0_cumulative_1971 f0_cumulative_1972 f0_cumulative_1973 f0_cumulative_1974 age ,
 		lcolor($color1 $color2 $color3 $color4 $color5)
 		lpattern(solid _ - solid _)
 		graphregion(color(white))
 		legend(order(1 "Cohort: 1970" 2 "1971" 3 "1972" 4 "1973" 5 "1973"))
 		xtitle("Age")
-		ytitle("Cumulative average number of kids per women")
+		ytitle("Cumulative number of kids by cohort")
 		;
 #d cr
 
@@ -62,15 +67,68 @@ reshape wide f_cumulative_ , i(age) j(cohort)
 
 
 #d ;
-	line f_cumulative_1975 f_cumulative_1976 f_cumulative_1977 f_cumulative_1978 f_cumulative_1979 age ,
+	line f0_cumulative_1975 f0_cumulative_1976 f0_cumulative_1977 f0_cumulative_1978 f0_cumulative_1979 age ,
 		lcolor($color1 $color2 $color3 $color4 $color5)
 		lpattern(solid _ - solid _)
 		graphregion(color(white))
 		legend(order(1 "Cohort: 1975" 2 "1976" 3 "1977" 4 "1978" 5 "1979"))
 		xtitle("Age")
-		ytitle("Cumulative average number of kids per women")
+		ytitle("Cumulative number of kids by cohort")
 		;
 #d cr
+
+
+
+#d ;
+	line f0_cumulative_1980 f0_cumulative_1981 f0_cumulative_1982 f0_cumulative_1983 f0_cumulative_1984 age ,
+		lcolor($color1 $color2 $color3 $color4 $color5)
+		lpattern(solid _ - solid _)
+		graphregion(color(white))
+		legend(order(1 "Cohort: 1980" 2 "1981" 3 "1982" 4 "1983" 5 "1984"))
+		xtitle("Age")
+		ytitle("Cumulative number of kids by cohort")
+		;
+#d cr
+
+
+
+
+#d ;
+	line f1_cumulative_1970 f1_cumulative_1971 f1_cumulative_1972 f1_cumulative_1973 f1_cumulative_1974 age ,
+		lcolor($color1 $color2 $color3 $color4 $color5)
+		lpattern(solid _ - solid _)
+		graphregion(color(white))
+		legend(order(1 "Cohort: 1970" 2 "1971" 3 "1972" 4 "1973" 5 "1973"))
+		xtitle("Age")
+		ytitle("Cumulative average number of kids by cohort")
+		;
+#d cr
+
+
+#d ;
+	line f1_cumulative_1975 f1_cumulative_1976 f1_cumulative_1977 f1_cumulative_1978 f1_cumulative_1979 age ,
+		lcolor($color1 $color2 $color3 $color4 $color5)
+		lpattern(solid _ - solid _)
+		graphregion(color(white))
+		legend(order(1 "Cohort: 1975" 2 "1976" 3 "1977" 4 "1978" 5 "1979"))
+		xtitle("Age")
+		ytitle("Cumulative average number of kids by cohort")
+		;
+#d cr
+
+
+
+#d ;
+	line f1_cumulative_1980 f1_cumulative_1981 f1_cumulative_1982 f1_cumulative_1983 f1_cumulative_1984 age ,
+		lcolor($color1 $color2 $color3 $color4 $color5)
+		lpattern(solid _ - solid _)
+		graphregion(color(white))
+		legend(order(1 "Cohort: 1980" 2 "1981" 3 "1982" 4 "1983" 5 "1984"))
+		xtitle("Age")
+		ytitle("Cumulative average number of kids by cohort")
+		;
+#d cr
+
 
 
 
