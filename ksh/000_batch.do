@@ -2,29 +2,22 @@
 
 dis "`c(username)'"
 
-if "`c(username)'" == "gyozo" {
-
-	global DB "/home/gyozo/Dropbox"
-	global root ${DB}/_babavaro
-	global code /home/gyozo/GitHub/HousingFertility/ksh
-
-	sysdir set PERSONAL /home/gyozo/ado/personal/
-	sysdir set PLUS "/home/gyozo/ado/plus/"
+if "`c(username)'" == "mta37_529" {
+	
+	
+	global root "x:\PROJECTS\Project37_A magyarországi családpolitikák fertilitásra gyakorolt hatásának vizsgálata\GYGY"
+	global code "${root}\code\"
+	global temp "${root}\temp\"
+	global output "${root}/output"
+	global log "${root}/output/log"
+	
+	sysdir set PERSONAL "x:\PROJECTS\Project37_A magyarországi családpolitikák fertilitásra gyakorolt hatásának vizsgálata\GYGY\code\ado_personal\"
+	
 }
 
 
-do ${code}/001_set_path
+do "${code}/000_set_path"
 
 
 
-
-
-/*------------------------------------------------------------------------------
-	run the code
-------------------------------------------------------------------------------*/
-
-/*
-do ${code}/101_merge
-do ${code}/102_village_csok
-do ${code}/103_create_variables
 
