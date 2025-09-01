@@ -22,12 +22,19 @@ global csok "x:\PROJECTS\Project37_A magyarországi családpolitikák fertilitá
 
 
 /*------------------------------------------------------------------------------
-	color codes
+	color scheme
 ------------------------------------------------------------------------------*/
 
-global color1 "100 100 100"
-
-
+global color1      "17 112 170"
+global color2       "252 125 11"
+global color3       "163 172 185"
+global color4       "87 96 108"
+global color5       "95 162 206"
+global color6       "200 82 0"
+global color7       "123 132 143"
+global color8       "163 204 233"
+global color9       "255 188 121"
+global color10       "200 208 217"
 
 /*------------------------------------------------------------------------------
 	controls
