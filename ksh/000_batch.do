@@ -13,10 +13,33 @@ if "`c(username)'" == "mta37_529" {
 	
 	sysdir set PERSONAL "x:\PROJECTS\Project37_A magyarországi családpolitikák fertilitásra gyakorolt hatásának vizsgálata\GYGY\code\ado_personal\"
 	
+	
+	do "${code}/000_set_path_KSH"
 }
 
 
-do "${code}/000_set_path"
+
+if "`c(username)'" == "gyozo" {
+
+	global DB "/home/gyozo/Dropbox"
+	global root ${DB}/_babavaro
+	global code /home/gyozo/GitHub/HousingFertility/ksh
+
+	sysdir set PERSONAL /home/gyozo/ado/personal/
+	sysdir set PLUS "/home/gyozo/ado/plus/"
+	
+	
+	do ${code}/001_set_path_dropbox
+}
+
+
+
+
+
+
+
+
+
 
 
 
