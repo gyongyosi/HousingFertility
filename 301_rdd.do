@@ -21,6 +21,37 @@ maptile village_csok, geo(ksh4) cutv(0.5) rangecolor("$color1" "$color2")
 graph export ${output}/map_village_csok.pdf, as(pdf) replace
 
 
+
+
+/*==============================================================================
+	balance table : based on eligibility
+==============================================================================*/
+
+
+use ${temp}/tstar_03, clear
+
+keep if ty == 2018
+
+local vars_to_use " ln_income U_rate ln_hp  sh_homeownership_b  "
+
+
+
+eststo clear
+eststo elig : estpost sum `VARLIST' if village_csok == 1 [aw = de01_2018], detail
+eststo nonelig : estpost sum `VARLIST' if village_csok == 0 [aw = de01_2018], detail
+eststo diff : estpost ttest `VARLIST', by(village_csok) unequal
+
+#d ;
+	esttab elig nonelig diff using ${output}/tab_balance.tex, 
+		cells("	mean(pattern(1 1  0) fmt(2)) b(star pattern(0 0  1) fmt(2))" 
+				"sd(pattern(1 1  0) fmt(2)) t(pattern(0 0  1) fmt(2))" )
+		label replace star(+ 0.1 * 0.05 ** 0.01)
+		mtitle("Eligible" "Non-eligible" "\shortstack{Difference}" )
+		booktabs nonumbers
+		;
+#d cr
+
+
 /*==============================================================================
 	what is the running variable?
 		population in 2018
