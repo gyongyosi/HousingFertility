@@ -22,15 +22,15 @@ gen birth_ = 1
 keep if inrange(mother_age, 15, 49)
 
 
-collapse(sum) birth_ , by(mother_age birth_mother_ty)
+collapse(sum) birth_ , by(mother_age ty_mother)
 
 
 
-gen cohort = birth_mother_ty
+gen cohort = ty_mother
 merge m:1 cohort mother_age using `N_women', nogen keep(1 3)
 drop cohort
 ren population pop_
-reshape wide birth_ pop_, i(mother_age) j(birth_mother_ty)
+reshape wide birth_ pop_, i(mother_age) j(ty_mother)
 
 
 
@@ -96,8 +96,9 @@ line Birth_1985* mother_age, xline(34)
 line Birth_1986* mother_age, xline(33)
 line Birth_1987* mother_age, xline(32)
 line Birth_1988* mother_age, xline(31)
-line Birth_1989* mother_age, xline(31)
+line Birth_1989* mother_age, xline(30)
 
+line Birth_1993* mother_age, xline(26)
 
 * 2015
 line Birth_1974* mother_age, xline(39)

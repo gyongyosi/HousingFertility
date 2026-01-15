@@ -16,11 +16,6 @@ tempfile tstar
 save `tstar'
 
 
-use "${csok}/village_csok", clear
-keep ksh4_bpker village_csok
-tempfile csok
-save `csok'
-
 
 
 
@@ -107,33 +102,28 @@ foreach X in out in {
 }
 
 
-foreach X of varlist in_ksh4_bpker out_ksh4_bpker {
-
-	local direction = subinstr("`X'", "_ksh4_bpker", "", .)
-
-	ren `X' ksh4_bpker
-	merge m:1 ksh4_bpker using `csok', nogen keep(1 3)
-	ren ksh4_bpker `X'
-	replace village_csok = 0 if village_csok == .
-	ren village_csok `direction'_village_csok
-
-}
 
 
 foreach X of varlist out_ksh4 in_ksh4 {
 
-	local direction = subinstr("`X'", "_tel", "", .)
+	local direction = subinstr("`X'", "_ksh4", "", .)
 
 	
 	ren `X' ksh4
-	merge m:1 ksh4  using `tstar', nogen keep(1 3) 
+	merge m:1 ksh4  using `tstar', nogen keep(1 3) keepusing(de01 tx01 tx02 tx03 mn01 CSOK_0000 CSOK_5000 mkod2018)
 	
 	ren ksh4 `X'
 
 		
-	foreach Y of varlist de01 tx01 tx02 tx03 mn01 {
-		ren `Y' `Y'_`direction'
+	foreach Y of varlist de01 tx01 tx02 tx03 mn01 CSOK_0000 CSOK_5000 mkod2018 {
+		ren `Y' `direction'_`Y'
 	}
+}
+
+foreach X of varlist in_CSOK* out_CSOK* {
+
+		replace `X' = 0 if `X' == .
+
 }
 
 

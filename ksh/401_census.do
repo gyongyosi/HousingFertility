@@ -1,12 +1,6 @@
-
-
 /*------------------------------------------------------------------------------
 	create mother panel
 ------------------------------------------------------------------------------*/
-cls
-
-
-
 
 
 /*------------------------------------------------------------------------------
@@ -18,47 +12,44 @@ cls
 local mother_born_lower = 1965
 local mother_born_upper = 2007
 
-
-
-
 clear
 set obs 3000
-gen ty = _n if inrange(_n, 1983, 2022)
+gen ty = _n if inrange(_n, 1983, 2024)
 drop if ty == .	
 tempfile timeframe
 save `timeframe'
 
-
-
-
 use "${census}/szemely", clear
-
+count 
 keep if neme == 2
+count 
 
+* generate woman-level birthday vars
+gen td_mother_birth = dmy(nap,ho,szev)
+format td_mother_birth %td
 gen tm_mother_birth = ym(szev, ho)
 format tm_mother_birth %tm
 gen ty_mother_birth = yofd(dofm(tm_mother_birth))
+* keep women born within target time range
 keep if inrange(ty_mother_birth, `mother_born_lower', `mother_born_upper')
+count 
 
-
-* child birth dates
-/*
-	gen tm_child_1 = ym(elszev, elszho)
-	gen tm_child_2 = ym(maszev, maszho)
-	gen tm_child_3 = ym(haszev, haszho)
-	gen tm_child_4 = ym(neszev, neszho)
-	gen tm_child_5 = ym(otszev, otszho)
-	gen tm_child_6 = ym(szev6, ho6)
-	gen tm_child_7 = ym(szev7, ho7)
-	gen tm_child_8 = ym(szev8, ho8)
-	gen tm_child_9 = ym(szev9, ho9)
-	gen tm_child_10 = ym(uszev, uszho)
-
-	forval i = 1(1)10 {
-		format tm_child_`i' %tm
-	}
- 
-*/
+* monthly version of child birth dates
+gen tm_child_1 = ym(elszev, elszho)
+gen tm_child_2 = ym(maszev, maszho)
+gen tm_child_3 = ym(haszev, haszho)
+gen tm_child_4 = ym(neszev, neszho)
+gen tm_child_5 = ym(otszev, otszho)
+gen tm_child_6 = ym(szev6, ho6)
+gen tm_child_7 = ym(szev7, ho7)
+gen tm_child_8 = ym(szev8, ho8)
+gen tm_child_9 = ym(szev9, ho9)
+gen tm_child_10 = ym(uszev, uszho)
+* format monthly version
+forval i = 1(1)10 {
+	format tm_child_`i' %tm
+}
+* yearly version of child birth dates
 gen ty_child_1 = elszev
 gen ty_child_2 = maszev
 gen ty_child_3 = haszev
@@ -70,21 +61,24 @@ gen ty_child_8 = szev8
 gen ty_child_9 = szev9
 gen ty_child_10 = uszev
 
-keep szemazon tm* ty*
-
-
+* keep relevant vars 
+keep szemazon td* tm* ty*
+* combine woman-level with year-level to create panel
 cross using `timeframe'
 
-
-
+* regression outcomes: flow and stock of children
 gen N_children = 0
 sort szemazon ty 
 forval i = 1(1)10 {
 	replace N_children = N_children + 1 if ty_child_`i' == ty
 }
+* fix strangely high tuplets
+replace N_children=1 if N_children > 4 
+* generate cumulative variable
 bysort szemazon : gen C_children = sum(N_children)
-
-
+tab N_children
+tab C_children
+* save 
 compress
 save "${temp}/census_001", replace
 
@@ -97,8 +91,7 @@ save "${temp}/census_001", replace
 
 use "${census}/szemely", clear
 
-keep szemazon irelo irelsz lcstip hazev cspot enemzv vallasv gakt jc terul
-
+keep szemazon irelo irelsz lcstip hazev cspot enemzv vallasv gakt jc terul lakev_x lakev lakho eterul
 
 gen ksh4_bpker = int(terul/10)
 gen ksh4 = ksh4_bpker
@@ -118,7 +111,6 @@ save "${temp}/mother_characteristics", replace
 		merge on settlement characteristics
 		create variables
 ------------------------------------------------------------------------------*/
-
 
 use "${temp}/tstar_important", clear
 keep if ty == 2018
@@ -140,7 +132,8 @@ gen mother_age = ty - ty_mother_birth
 * settlement level variables
 gen U_2018 = mn01_2018 / de01_2018
 gen I_2018 = (tx02_2018 - tx03_2018) / tx01_2018
-replace CSOK_0 = 0 if CSOK_0 == .
+* turn CSOK_0000 variable's entries for non-eligible settlements from . to 0
+replace CSOK_0000 = 0 if CSOK_0000 == .
 
 
 * MARITAL STATUS
@@ -177,8 +170,7 @@ replace eduCatg = 3 if inlist(irelsz,5,6,7)
 replace eduCatg = 4 if inlist(irelsz,8,9,10)
 ** create binary version
 gen eduHigh = inlist(irelsz,5,6,7,8,9,10)
-
-
+* create non-categorical version
 tab eduCatg, gen(edu_)
 
 * variables for heterogeneity analysis
@@ -197,9 +189,8 @@ drop tmp_kids_by_2018
 cap drop POST_2019
 gen POST_2019 = (ty >= 2020)
 
-
 gen cohort5 = .
-forval i = 1965(5)2000 {
+forval i = 1965(5)2005 {
 	local j = `i' + 4
 	replace cohort5 = `i' if inrange(ty_mother_birth, `i', `j')
 }
@@ -209,15 +200,87 @@ lab var edu_1 "Primary school"
 lab var edu_2 "Vocational school"
 lab var edu_3 "High school"
 lab var edu_4 "College"
-lab var mother_age "Mother age"
-
-
-
+lab var mother_age "Age"
 
 save "${temp}/census_002", replace
+keep if inrange(mother_age, 15, 49)
+save "${temp}/census_002_trim", replace
 
 
+/*------------------------------------------------------------------------------
+	adding additional births from LB
+------------------------------------------------------------------------------*/
 
+cls
+
+use "${temp}/lb_panel_all", clear
+keep momID tm_child_*
+rename tm_child_* tm_child_LB_*
+save "${temp}/lb_panel_ForMerge", replace
+
+use "${temp}/census_002_trim", clear
+* merge with match file
+merge m:1 szemazon using "${temp}/matchesAll"
+* drop the match file entries that did not find match in census (only 320)
+drop if _merge==2
+* save the census entries that do NOT match to LB and therefore won't be updated
+preserve
+keep if _merge==1
+drop _merge
+save "${temp}/censusNoMomID", replace
+restore
+* save the census entries that do match to LB
+keep if _merge==3
+drop _merge
+merge m:1 momID using "${temp}/lb_panel_ForMerge", update
+* drop the LB panel file entries that did not find match in census
+drop if _merge==2
+save "${temp}/censusYesMomID", replace
+
+use "${temp}/censusYesMomID", clear
+* extract birth years from Live Birth panel
+gen ty_child_LB_1 = year(dofm(tm_child_LB_1))
+gen ty_child_LB_2 = year(dofm(tm_child_LB_2))
+gen ty_child_LB_3 = year(dofm(tm_child_LB_3))
+gen ty_child_LB_4 = year(dofm(tm_child_LB_4))
+gen ty_child_LB_5 = year(dofm(tm_child_LB_5))
+gen ty_child_LB_6 = year(dofm(tm_child_LB_6))
+gen ty_child_LB_7 = year(dofm(tm_child_LB_7))
+gen ty_child_LB_8 = year(dofm(tm_child_LB_8))
+gen ty_child_LB_9 = year(dofm(tm_child_LB_9))
+gen ty_child_LB_10 = year(dofm(tm_child_LB_10))
+* update here: fill in if missing census and not missing LB!
+replace ty_child_1 = ty_child_LB_1 if (ty_child_LB_1!=. & ty_child_1==.)
+replace ty_child_2 = ty_child_LB_2 if (ty_child_LB_2!=. & ty_child_2==.)
+replace ty_child_3 = ty_child_LB_3 if (ty_child_LB_3!=. & ty_child_3==.)
+replace ty_child_4 = ty_child_LB_4 if (ty_child_LB_4!=. & ty_child_4==.)
+replace ty_child_5 = ty_child_LB_5 if (ty_child_LB_5!=. & ty_child_5==.)
+replace ty_child_6 = ty_child_LB_6 if (ty_child_LB_6!=. & ty_child_6==.)
+replace ty_child_7 = ty_child_LB_7 if (ty_child_LB_7!=. & ty_child_7==.)
+replace ty_child_8 = ty_child_LB_8 if (ty_child_LB_8!=. & ty_child_8==.)
+replace ty_child_9 = ty_child_LB_9 if (ty_child_LB_9!=. & ty_child_9==.)
+replace ty_child_10 = ty_child_LB_10 if (ty_child_LB_10!=. & ty_child_10==.)
+* re-combine with entries that do NOT match to LB and were not updated
+append using "${temp}/censusNoMomID"
+* save 
+save "${temp}/censusAllMomID", replace
+
+
+use "${temp}/censusAllMomID", clear
+
+* recompute outcome variables
+gen N_childrenNEW = 0
+sort szemazon ty 
+forval i = 1(1)10 {
+	replace N_childrenNEW = N_childrenNEW + 1 if ty_child_`i' == ty
+}
+* fix strangely high tuplets
+replace N_childrenNEW=1 if N_childrenNEW > 4 
+bysort szemazon : gen C_childrenNEW = sum(N_childrenNEW)
+tab N_childrenNEW
+tab C_childrenNEW
+* save this for regressions
+save "${temp}/census_002_trim_updated", replace
 
 /*==============================================================================
 	RURAL CSOK -- DiD
@@ -243,10 +306,10 @@ foreach BW in 0000 /* 2000 3000 4000 */ 5000  {
 	eststo clear
 	eststo TREATED : estpost summarize  `VARS' if CSOK_`BW' == 1 & ty == 2018, d
 	eststo CONTROL : estpost summarize  `VARS' if CSOK_`BW' == 0 & ty == 2018, d
-	eststo diff : estpost ttest `VARS' if ty == 2018, by(CSOK_`BW')
+	eststo diff : estpost ttest `VARS' if ty == 2018, by(CSOK_`BW') unequal
 	
 	#d ;
-	esttab * using ${output}/balance_RCSOK_`BW'.rtf, 
+	esttab * using "${output}/balance_RCSOK_`BW'.rtf", 
 		replace
 		label
 		cells("	mean(pattern(1 1 0) fmt(2)) b(star pattern(0 0  1) fmt(2))" 
@@ -304,7 +367,7 @@ foreach BW in 0000 /*2000 3000 4000 */ 5000 {
 			;
 		
 	#d cr
-	graph export  "${output}/hist_edu4_by_CSOK`BW'.pdf", as(pdf) replace
+	graph export  "${output}/hist_edu_by_CSOK`BW'.pdf", as(pdf) replace
 }
 
 
@@ -327,44 +390,44 @@ use "${temp}/census_002", clear
 keep if inrange(mother_age, 15, 49)
 
 
-foreach BW in 0000  /* 2000 3000 4000 5000 */ {
+foreach BW in  5000  /* 0000 2000 3000 4000  */ {
 	
 	eststo clear
 	
-	
-	eststo q_1 : reghdfe N_children i.CSOK_`BW'##i.POST if inrange(ty, 2014, .) , absorb(ksh4_bpker ty ) vce(robust)
+	local seType "cluster ksh4_bpker"
+	eststo q_1 : reghdfe N_children i.CSOK_`BW'##i.POST if inrange(ty, 2014, .) , absorb(ksh4_bpker ty ) vce(`seType')
 		*estadd local FE "Yes"
 
-	eststo q_2 : reghdfe N_children i.CSOK_`BW'##i.POST if inrange(ty, 2014, .) , absorb(ksh4_bpker ty  $x1_post) vce(robust)
+	eststo q_2 : reghdfe N_children i.CSOK_`BW'##i.POST if inrange(ty, 2014, .) , absorb(ksh4_bpker ty  $x1_post) vce(`seType')
 		*estadd local FE "Yes"
 		*estadd local controls "Yes"
 
 		
-	eststo q_3 : reghdfe N_children i.CSOK_`BW'##i.POST if inrange(ty, 2014, .) , absorb(ksh4_bpker ty  $x1_post $x2_post) vce(robust)
+	eststo q_3 : reghdfe N_children i.CSOK_`BW'##i.POST if inrange(ty, 2014, .) , absorb(ksh4_bpker ty  $x1_post $x2_post) vce(`seType')
 		*estadd local FE "Yes"
 		*estadd local controls "Yes"
 		*estadd local settlement "Yes"	
 		
-	eststo q_4 : reghdfe N_children i.CSOK_`BW'##i.POST if inrange(ty, 2014, .) , absorb(ksh4_bpker ty  $x1_post $x2_post $x3_post) vce(robust)
+	eststo q_4 : reghdfe N_children i.CSOK_`BW'##i.POST if inrange(ty, 2014, .) , absorb(ksh4_bpker ty  $x1_post $x2_post $x3_post) vce(`seType')
 		*estadd local FE "Yes"
 		*estadd local controls "Yes"
 		*estadd local settlement "Yes"	
 		*estadd local region "Yes"
 			
-	eststo q_5 : reghdfe N_children i.CSOK_`BW'##i.POST if inrange(ty, 2014, .) , absorb(ksh4_bpker ty  $x1_post $x2_post $x4_post) vce(robust)
+	eststo q_5 : reghdfe N_children i.CSOK_`BW'##i.POST if inrange(ty, 2014, .) , absorb(ksh4_bpker ty  $x1_post $x2_post $x4_post) vce(`seType')
 		*estadd local FE "Yes"
 		*estadd local controls "Yes"
 		*estadd local settlement "Yes"	
 		*estadd local county "Yes"
 	
 			
-	eststo q_6 : reghdfe N_children i.CSOK_`BW'##i.POST if inrange(ty, 2014, .) , absorb(ksh4_bpker ty  $x1_post $x2_post $x5_post) vce(robust)
+	eststo q_6 : reghdfe N_children i.CSOK_`BW'##i.POST if inrange(ty, 2014, .) , absorb(ksh4_bpker ty  $x1_post $x2_post $x5_post) vce(`seType')
 		*estadd local FE "Yes"
 		*estadd local controls "Yes"
 		*estadd local settlement "Yes"	
 		*estadd local subregion "Yes"
 	
-	esttab using "${output}/tab_rural_BW`BW'".csv, keep(1.CSOK*#1.POST) replace
+	esttab using "${output}/tab_rural_BW`BW'_cumul.rtf", keep(1.CSOK_`BW'#1.POST_2019) replace
 
 	
 }
@@ -372,32 +435,102 @@ foreach BW in 0000  /* 2000 3000 4000 5000 */ {
 
 
 /*------------------------------------------------------------------------------
-	diff-in-diff figure
+	diff-in-diff figure - updated version
 ------------------------------------------------------------------------------*/
-
 
 use "${temp}/census_002", clear
 
 keep if inrange(mother_age, 15, 49)
 
+use "${temp}/census_002_trim_updated", clear
+
+
+foreach BW in 5000  /* 0000 2000 3000 4000 5000 */ {
+
+	*** estimating with flow
+	reghdfe N_childrenNEW i.CSOK_`BW'##ib2019.ty if inrange(ty, 2014, 2024), absorb(i.ty_mother_birth##i.ty i.marriedBy2019##i.ty i.kids_by_2018##i.ty i.lcstip##i.ty i.eduCatg##i.ty i.hungarian##i.ty i.relC##i.ty i.szemazon) vce(robust)
+
+	gen TIME = _n if inrange(_n, 2014, 2024)
+	gen b = .
+	gen se = .
+
+	forval i = 2008(1)2024 {
+		cap replace b = _b[1.CSOK_`BW'#`i'.ty] if TIME == `i'
+		cap replace se = _se[1.CSOK_`BW'#`i'.ty] if TIME == `i'
+	}
+	gen hi = b + 1.96 * se
+	gen lo = b - 1.96 * se
+
+	#d ;
+		twoway 
+			(connected b TIME, lcolor("$color1") mcolor("$color1"))
+			(rcap hi lo TIME, color("$color1")), 
+				graphregion(color(white))
+				xtitle("Year")
+				ytitle("Estimated coefficient")
+				legend(off)
+				xline(2019.5)	
+			;
+	#d cr
+	graph export "${output}/pretrend_CSOK_5000_6", as(pdf) replace
+	drop b se hi lo TIME
+
+	*** estimating with stock
+	reghdfe C_childrenNEW i.CSOK_`BW'##ib2019.ty if inrange(ty, 2014, 2024), absorb(i.ty_mother_birth##i.ty i.marriedBy2019##i.ty i.kids_by_2018##i.ty i.lcstip##i.ty i.eduCatg##i.ty i.hungarian##i.ty i.relC##i.ty i.szemazon) vce(robust)
+
+	gen TIME = _n if inrange(_n, 2014, 2024)
+	gen b = .
+	gen se = .
+
+	forval i = 2008(1)2024 {
+		cap replace b = _b[1.CSOK_`BW'#`i'.ty] if TIME == `i'
+		cap replace se = _se[1.CSOK_`BW'#`i'.ty] if TIME == `i'
+	}
+	gen hi = b + 1.96 * se
+	gen lo = b - 1.96 * se
+
+	#d ;
+		twoway 
+			(connected b TIME, lcolor("$color1") mcolor("$color1"))
+			(rcap hi lo TIME, color("$color1")), 
+				graphregion(color(white))
+				xtitle("Year")
+				ytitle("Estimated coefficient")
+				legend(off)
+				xline(2019.5)
+			;
+	#d cr
+	graph export "${output}/pretrend_CSOK_5000_6_cumul.pdf", as(pdf) replace
+	drop b se hi lo TIME
+}
+
+
+/*------------------------------------------------------------------------------
+	diff-in-diff figure
+------------------------------------------------------------------------------*/
+
+use "${temp}/census_002", clear
+
+keep if inrange(mother_age, 15, 49)
+
+use "${temp}/census_002_trim_updated", clear
+
 
 foreach BW in 5000  /* 0000 2000 3000 4000 5000 */ {
 
 	*** estimating with settlement FE
-	reghdfe N_children i.CSOK_`BW'##ib2019.ty if inrange(ty, 2014, 2022), absorb(ksh4 ty $x1_ty  $x2_ty  $x3_ty  i.relC##i.ty ) vce(robust)
+	reghdfe N_childrenNEW i.CSOK_`BW'##ib2019.ty if inrange(ty, 2014, 2024), absorb(ksh4 ty $x1_ty  $x2_ty  $x3_ty  i.relC##i.ty ) vce(robust)
 
-	gen TIME = _n if inrange(_n, 2014, 2022)
+	gen TIME = _n if inrange(_n, 2014, 2024)
 	gen b = .
 	gen se = .
 
-	forval i = 2008(1)2022 {
-		cap replace b = _b[1.CSOK#`i'.ty] if TIME == `i'
-		cap replace se = _se[1.CSOK#`i'.ty] if TIME == `i'
+	forval i = 2008(1)2024 {
+		cap replace b = _b[1.CSOK_`BW'#`i'.ty] if TIME == `i'
+		cap replace se = _se[1.CSOK_`BW'#`i'.ty] if TIME == `i'
 	}
-
 	gen hi = b + 1.96 * se
 	gen lo = b - 1.96 * se
-
 
 	#d ;
 		twoway 
@@ -407,33 +540,25 @@ foreach BW in 5000  /* 0000 2000 3000 4000 5000 */ {
 				xtitle("")
 				ytitle("Estimated coefficient")
 				legend(off)
-				xline(2019.5)
-				
-				
-			
+				xline(2019.5)	
 			;
 	#d cr
-	graph export "${output}/pretrend_CSOK`BW'_spec1.pdf", as(pdf) replace
-	
+	graph export "${output}/pretrend_CSOK`BW'_spec1_withLB.pdf", as(pdf) replace
 	drop b se hi lo TIME
 
-	
-	
 	*** estimating with mother FE
-	reghdfe N_children i.CSOK_`BW'##ib2019.ty if inrange(ty, 2014, 2022), absorb(szemazon ty $x1_ty  $x2_ty  $x3_ty  ) vce(robust)
+	reghdfe N_childrenNEW i.CSOK_`BW'##ib2019.ty if inrange(ty, 2014, 2024), absorb(szemazon ty $x1_ty  $x2_ty  $x3_ty  ) vce(robust)
 
-	gen TIME = _n if inrange(_n, 2014, 2022)
+	gen TIME = _n if inrange(_n, 2014, 2024)
 	gen b = .
 	gen se = .
 
-	forval i = 2008(1)2022 {
-		cap replace b = _b[1.CSOK#`i'.ty] if TIME == `i'
-		cap replace se = _se[1.CSOK#`i'.ty] if TIME == `i'
+	forval i = 2008(1)2024 {
+		cap replace b = _b[1.CSOK_`BW'#`i'.ty] if TIME == `i'
+		cap replace se = _se[1.CSOK_`BW'#`i'.ty] if TIME == `i'
 	}
-
 	gen hi = b + 1.96 * se
 	gen lo = b - 1.96 * se
-
 
 	#d ;
 		twoway 
@@ -444,14 +569,10 @@ foreach BW in 5000  /* 0000 2000 3000 4000 5000 */ {
 				ytitle("Estimated coefficient")
 				legend(off)
 				xline(2019.5)
-				
-				
-			
 			;
 	#d cr
-	graph export "${output}/pretrend_CSOK`BW'_spec2.pdf", as(pdf) replace
+	graph export "${output}/pretrend_CSOK`BW'_spec2_withLB.pdf", as(pdf) replace
 	drop b se hi lo TIME
-
 }
 
 
@@ -471,37 +592,37 @@ use "${temp}/census_002", clear
 keep if inrange(mother_age, 15, 49)
 
 
-foreach BW in 0000  /* 2000 3000 4000 5000 */ {
+foreach BW in 5000  /* 0000 2000 3000 4000 5000 */ {
 
 	eststo clear
-	eststo q_1 : reghdfe N_children i.CSOK_4##i.POST if inrange(ty, 2014, .) & high_edu == 0, absorb(ksh4 ty  $x1_post) vce(robust)
+	eststo q_1 : reghdfe N_children i.CSOK_`BW'##i.POST if inrange(ty, 2014, .) & high_edu == 0, absorb(ksh4 ty  $x1_post) vce(robust)
 		estadd local FE "Yes"
 		estadd local controls "Yes"
 
-	eststo q_2 : reghdfe N_children i.CSOK_4##i.POST if inrange(ty, 2014, .) & high_edu == 1, absorb(ksh4 ty  $x1_post) vce(robust)
+	eststo q_2 : reghdfe N_children i.CSOK_`BW'##i.POST if inrange(ty, 2014, .) & high_edu == 1, absorb(ksh4 ty  $x1_post) vce(robust)
 		estadd local FE "Yes"
 		estadd local controls "Yes"
 
 		
-	eststo q_3 : reghdfe N_children i.CSOK_4##i.POST if inrange(ty, 2014, .) & young == 0, absorb(ksh4 ty  $x1_post) vce(robust)
+	eststo q_3 : reghdfe N_children i.CSOK_`BW'##i.POST if inrange(ty, 2014, .) & young == 0, absorb(ksh4 ty  $x1_post) vce(robust)
 		estadd local FE "Yes"
 		estadd local controls "Yes"
 
-	eststo q_4 : reghdfe N_children i.CSOK_4##i.POST if inrange(ty, 2014, .) & young == 1, absorb(ksh4 ty  $x1_post) vce(robust)
+	eststo q_4 : reghdfe N_children i.CSOK_`BW'##i.POST if inrange(ty, 2014, .) & young == 1, absorb(ksh4 ty  $x1_post) vce(robust)
 		estadd local FE "Yes"
 		estadd local controls "Yes"
 
-	eststo q_5 : reghdfe N_children i.CSOK_4##i.POST if inrange(ty, 2014, .) & kids_by_2018 == 0, absorb(ksh4 ty  $x1_post) vce(robust)
+	eststo q_5 : reghdfe N_children i.CSOK_`BW'##i.POST if inrange(ty, 2014, .) & kids_by_2018 == 0, absorb(ksh4 ty  $x1_post) vce(robust)
 		estadd local FE "Yes"
 		estadd local controls "Yes"
 
-	eststo q_6 : reghdfe N_children i.CSOK_4##i.POST if inrange(ty, 2014, .) & kids_by_2018 > 0, absorb(ksh4 ty  $x1_post) vce(robust)
+	eststo q_6 : reghdfe N_children i.CSOK_`BW'##i.POST if inrange(ty, 2014, .) & kids_by_2018 > 0, absorb(ksh4 ty  $x1_post) vce(robust)
 		estadd local FE "Yes"
 		estadd local controls "Yes"
 
-	esttab, keep(1.CSOK*#1.POST)
 
-		
+		esttab using "${output}/tab_hetero_rural_BW`BW'.rtf", keep(1.CSOK_`BW'#1.POST_2019) replace
+	
 
 }
 
@@ -517,7 +638,6 @@ foreach BW in 0000  /* 2000 3000 4000 5000 */ {
 
 use "${temp}/census_002", clear
 
-keep if inrange(mother_age, 15, 49)
 
 
 foreach X in 2016 2017 2018 2019 2020 2021 2022 {
@@ -525,6 +645,10 @@ foreach X in 2016 2017 2018 2019 2020 2021 2022 {
 	egen C_children_`X' = mean(tmp_C_children_`X' ), by(szemazon)
 	drop tmp_C_children_`X'
 }
+
+
+keep if inrange(mother_age, 15, 49)
+
 
 gen d_C_children = C_children_2022 - C_children_2019
 gen d_C_children_placebo = C_children_2019 - C_children_2016
@@ -577,6 +701,39 @@ use "${temp}/rdd_RCSOK_census_01", clear
 		;
 	
 #d cr
+
+
+
+#d ;
+	binscatter irelo de01 if   CSOK_5 != . & ty == 2018, rd(5000) 
+		nq(100)
+		xtitle("Population")
+		ytitle("Average years of educations" "(age 15-49)")
+		;
+	
+#d cr
+
+
+#d ;
+	binscatter agglo de01 if CSOK_5 != . & ty == 2018, rd(5000) 
+		nq(100)
+		xtitle("Population")
+		ytitle("Share of women living in agglomeration" "(age 15-49)")
+		;
+	
+#d cr
+
+
+** not in agglomeration
+#d ;
+	binscatter edu_1 de01 if CSOK_5 != . & ty == 2018 & agglo != 1, rd(5000) 
+		nq(100)
+		xtitle("Population")
+		ytitle("Share of women with primary school education" "(age 15-49)")
+		;
+	
+#d cr
+
 
 
 

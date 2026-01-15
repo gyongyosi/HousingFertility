@@ -13,8 +13,6 @@ forval i = 2016(1)2019 {
 }
 
 
-
-
 use ${LB}/Élveszuletes_1970-2015, clear
 
 foreach X of varlist * {
@@ -54,34 +52,111 @@ foreach X in mother father {
 
 * generate dates
 
-gen birth_td = mdy(esho, esnap, esev)
-format birth_td %td 
-
-gen birth_mother_td = mdy(noszho, nosznap, noszev)
-format birth_mother_td %td
-
-gen birth_father_td = mdy(fiszho, fisznap, fiszev)
-format birth_father_td %td
-
-gen birth_prev_td = mdy(eloho, elonap, eloev)
-format birth_prev_td %td
-
-
-foreach X in birth birth_father birth_mother birth_prev {
-	gen `X'_ty = yofd(`X'_td)
-	gen `X'_tm = mofd(`X'_td)
-	format `X'_tm %tm
+foreach X in esho noszho fiszho esnap nosznap fisznap eloho elonap hazho haznap {
+	replace `X' = . if `X' == 99
 }
 
-gen mother_age = birth_ty - birth_mother_ty
-gen mother_age_tm = (birth_tm - birth_mother_tm) / 12
+foreach X in esev noszev fiszev eloev hazev {
+	replace `X' = . if `X' == 9999
+}
 
 
-local vars_to_drop esho esnap esev noszho nosznap noszev fiszho fisznap fiszev eloho elonap eloev
-drop `vars_to_drop'
+
+
+gen td_baby = mdy(esho, esnap, esev)
+format td_baby %td 
+
+gen td_mother = mdy(noszho, nosznap, noszev)
+format td_mother %td
+
+gen td_father = mdy(fiszho, fisznap, fiszev)
+format td_father %td
+
+gen td_prev = mdy(eloho, elonap, eloev)
+format td_prev %td
+
+gen td_marriage = mdy(hazho, haznap, hazev)
+format td_marriage %td
+
+ren esho m_baby
+ren noszho m_mother
+ren fiszho m_father
+ren esnap d_baby
+ren nosznap d_mother
+ren fisznap d_father
+ren eloho m_prev
+ren elonap d_prev
+ren hazho m_marriage
+ren haznap d_marriage
+
+ren esev y_baby
+ren noszev y_mother
+ren fiszev y_father
+ren eloev y_prev
+ren hazev y_marriage
+
+foreach X in baby mother father marriage prev {
+	gen tm_`X' = ym(y_`X', m_`X')
+	format tm_`X' %tm
+}
+
+
+
+
+gen mother_age = y_baby - y_mother
+
+
+
+* education
+foreach X in no fi {
+	
+	if "`X'" == "no" {
+		local j = "mother" 
+	}
+	else if "`X'" == "fi" {
+		local j = "father"
+	}
+	
+	
+
+	gen edu_`j' = .
+	replace edu_`j' = 1 if inrange(`X'isk, 1, 2)
+	replace edu_`j' = 2 if inrange(`X'isk, 3, 3)
+	replace edu_`j' = 3 if inrange(`X'isk, 4, 4)
+	replace edu_`j' = 4 if inrange(`X'isk, 5, 5)
+
+	replace edu_`j' = 1 if inrange(`X'isk99, 1, 5)
+	replace edu_`j' = 2 if inrange(`X'isk99, 6, 7)
+	replace edu_`j' = 3 if inrange(`X'isk99, 8, 8)
+	replace edu_`j' = 4 if inrange(`X'isk99, 9, 10)
+
+	replace edu_`j' = 1 if inrange(`X'isk21, 0, 2)
+	replace edu_`j' = 2 if inrange(`X'isk21, 3, 3)
+	replace edu_`j' = 3 if inrange(`X'isk21, 4, 4)
+	replace edu_`j' = 4 if inrange(`X'isk21, 5, 7)	
+}
+
+
+
+lab def edu 1 "primary school" 2 "vocational school" 3 "high school" 4 "college"
+lab val edu_mother edu
+lab val edu_father edu
+
+
+gen id_baby = _n
+
+
 
 save "${temp}/LB_001", replace
 
 
 
+/*------------------------------------------------------------------------------
+	information on previous birth is only available from 1973
+------------------------------------------------------------------------------*/
 
+use  "${temp}/LB_001", clear
+
+keep if inrange(y_baby, 1973, .)
+
+save "${temp}/LB_002", replace

@@ -27,7 +27,7 @@ graph export "${temp}/migration_by_type.pdf", as(pdf) replace
 
 
 
-
+* women migration across settlements by age category
 use "${temp}/internal_migration_02", clear
 
 keep if jel == 1
@@ -57,7 +57,7 @@ reshape wide moving_, i(ty) j(age_cat)
 
 
 
-
+* women migration across settlements by age category (more detailed)
 use "${temp}/internal_migration_02", clear
 
 keep if jel == 1
@@ -92,7 +92,7 @@ reshape wide moving_, i(ty) j(age_cat)
 
 
 
-
+* women migration across settlements by rural CSOK status
 use "${temp}/internal_migration_02", clear
 
 keep if jel == 1 | jel == 2
@@ -101,10 +101,10 @@ keep if nem == 2
 gen moving_ = 1
 
 gen moving_type = .
-replace moving_type = 1 if in_village_csok == 0 & out_village_csok == 0
-replace moving_type = 2 if in_village_csok == 0 & out_village_csok == 1
-replace moving_type = 3 if in_village_csok == 1 & out_village_csok == 0
-replace moving_type = 4 if in_village_csok == 1 & out_village_csok == 1
+replace moving_type = 1 if in_CSOK_0000 == 0 & out_CSOK_0000 == 0
+replace moving_type = 2 if in_CSOK_0000 == 0 & out_CSOK_0000 == 1
+replace moving_type = 3 if in_CSOK_0000 == 1 & out_CSOK_0000 == 0
+replace moving_type = 4 if in_CSOK_0000 == 1 & out_CSOK_0000 == 1
 
 lab def moving_type_csok 1 "non-CSOK to non-CSOK" 2 "CSOK to non_CSOK" 3 "non-CSOK to CSOK" 4 "CSOK to CSOK"
 lab val moving_type moving_type_csok 
@@ -112,6 +112,7 @@ lab val moving_type moving_type_csok
 
 collapse (sum) moving_, by(moving_type ty )
 
+drop if moving_type == .
 reshape wide moving_, i(ty) j(moving_type)
 
 

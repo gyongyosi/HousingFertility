@@ -18,8 +18,11 @@ global tstar x:\INPUT_MTA\KÖZÖS\Tstar\Tstar\
 global map x:\INPUT_MTA\KÖZÖS\térkép fájlok\Shape
 global maptile_geolist ${code}/ado_personal/maptile_geographies
 global csok "x:\PROJECTS\Project37_A magyarországi családpolitikák fertilitásra gyakorolt hatásának vizsgálata\GYGY\data\village_csok\"
+global hp "X:\PROJECTS\Project37_A magyarországi családpolitikák fertilitásra gyakorolt hatásának vizsgálata\GYGY\data\hp\"
 
 
+
+global agglomeration "x:\INPUT_MTA\KÖZÖS\"
 
 /*------------------------------------------------------------------------------
 	color scheme
@@ -42,7 +45,7 @@ global color10       "200 208 217"
 
 
 global x1_post "i.ty_mother_birth##i.POST i.eduCatg##i.POST i.lcstip##i.POST i.hungarian##i.POST i.marriedBy2019##i.POST"
-global x2_post "c.U_2018##i.POST c.I_2018##i.POST"
+global x2_post "c.U_2018##i.POST c.I_2018##i.POST i.agglo##i.POST"
 global x3_post "i.rkod2018##i.POST"
 global x4_post "i.mkod2018##i.POST"
 global x5_post "i.jaras175##i.POST"
