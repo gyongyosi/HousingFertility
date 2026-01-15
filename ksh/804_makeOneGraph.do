@@ -1,3 +1,135 @@
+
+
+
+/*------------------------------------------------------------------------------
+	Tables
+------------------------------------------------------------------------------*/
+
+use "${temp}/census_002_trim_updated", clear
+
+
+
+
+*** Version : flow
+
+
+global x1_post_N "i.ty" 
+global x2_post_N "i.ty_mother_birth##i.POST i.kids_by_2018##i.POST i.eduCatg##i.POST i.marriedBy2019##i.POST  i.relC##i.POST" 
+global x3_post_N "i.rkod2018##i.POST" 
+global x4_post_N "i.mkod2018##i.POST" 
+global x5_post_N "i.jaras175##i.POST" 
+
+
+
+use "${temp}/census_002_trim_updated", clear
+
+eststo clear
+
+
+eststo q_1 : reghdfe N_childrenNEW i.CSOK_5000##i.POST_2019 if inrange(ty, 2014, 2024), absorb($x1_post_N) vce("cluster ksh4")
+	estadd local time "Yes"
+
+eststo q_2 : reghdfe N_childrenNEW i.CSOK_5000##i.POST_2019 if inrange(ty, 2014, 2024), absorb($x1_post_N $x2_post_N ) vce("cluster ksh4")
+	estadd local time "Yes"
+	estadd local mother "Yes"
+
+
+eststo q_3 : reghdfe N_childrenNEW i.CSOK_5000##i.POST_2019 if inrange(ty, 2014, 2024), absorb($x1_post_N $x2_post_N $x3_post_N) vce("cluster ksh4")
+	estadd local time "Yes"
+	estadd local mother "Yes"
+	estadd local region_FE "Yes"
+
+
+eststo q_4 : reghdfe N_childrenNEW i.CSOK_5000##i.POST_2019 if inrange(ty, 2014, 2024), absorb($x1_post_N $x2_post_N $x4_post_N) vce("cluster ksh4")
+	estadd local time "Yes"
+	estadd local mother "Yes"
+	estadd local county_FE "Yes"
+
+eststo q_5 : reghdfe N_childrenNEW i.CSOK_5000##i.POST_2019 if inrange(ty, 2014, 2024), absorb($x1_post_N $x2_post_N  $x5_post_N) vce("cluster ksh4")
+	estadd local time "Yes"
+	estadd local mother "Yes"
+	estadd local subregion_FE "Yes"
+
+
+
+#d ;
+esttab q* 	using "${output}/tab_main_flow.rtf",  replace nocons nomtitle
+	keep(1.CSOK_5000#1.POST_2019  ) coeflabel( 1.CSOK_5000#1.POST_2019 "Rural CSOK \(\times\) Post")	
+	 nonote obslast  star(+ 0.1 * 0.05 ** 0.01) se 
+	scalars("time Year FE"
+			"mother Mother controls"
+			"region_FE Region FE"
+			"county_FE County FE"
+			"subregion_FE Subregion FE"
+			) 
+	;
+#d cr
+
+
+
+*** Version : cumulative
+
+
+global x1_post_C "szemazon i.ty" 
+global x2_post_C "i.ty_mother_birth##i.POST i.kids_by_2018##i.POST i.eduCatg##i.POST i.marriedBy2019##i.POST  i.relC##i.POST" 
+global x3_post_C "i.rkod2018##i.POST" 
+global x4_post_C "i.mkod2018##i.POST" 
+global x5_post_C "i.jaras175##i.POST" 
+
+
+use "${temp}/census_002_trim_updated", clear
+
+eststo clear
+
+
+eststo q_1 : reghdfe C_childrenNEW i.CSOK_5000##i.POST_2019 if inrange(ty, 2014, 2024), absorb($x1_post_C) vce("cluster ksh4")
+	estadd local time "Yes"
+
+eststo q_2 : reghdfe C_childrenNEW i.CSOK_5000##i.POST_2019 if inrange(ty, 2014, 2024), absorb($x1_post_C $x2_post_C ) vce("cluster ksh4")
+	estadd local time "Yes"
+	estadd local mother "Yes"
+
+
+eststo q_3 : reghdfe C_childrenNEW i.CSOK_5000##i.POST_2019 if inrange(ty, 2014, 2024), absorb($x1_post_C $x2_post_C $x3_post_C) vce("cluster ksh4")
+	estadd local time "Yes"
+	estadd local mother "Yes"
+	estadd local region_FE "Yes"
+
+
+eststo q_4 : reghdfe C_childrenNEW i.CSOK_5000##i.POST_2019 if inrange(ty, 2014, 2024), absorb($x1_post_C $x2_post_C $x4_post_C) vce("cluster ksh4")
+	estadd local time "Yes"
+	estadd local mother "Yes"
+	estadd local county_FE "Yes"
+
+eststo q_5 : reghdfe C_childrenNEW i.CSOK_5000##i.POST_2019 if inrange(ty, 2014, 2024), absorb($x1_post_C $x2_post_C  $x5_post_C) vce("cluster ksh4")
+	estadd local time "Yes"
+	estadd local mother "Yes"
+	estadd local subregion_FE "Yes"
+
+
+
+#d ;
+esttab q* 	using "${output}/tab_main_stock.rtf",  replace nocons nomtitle
+	keep(1.CSOK_5000#1.POST_2019  ) coeflabel( 1.CSOK_5000#1.POST_2019 "Rural CSOK \(\times\) Post")	
+	 nonote obslast  star(+ 0.1 * 0.05 ** 0.01) se 
+	scalars("time Mother \& Year FE"
+			"mother Mother controls"
+			"region_FE Region FE"
+			"county_FE County FE"
+			"subregion_FE Subregion FE"
+			) 
+	;
+#d cr
+
+
+
+
+
+
+/*------------------------------------------------------------------------------
+	Figures
+------------------------------------------------------------------------------*/
+
 cls
 capture log close
 log using "${temp}/run1013.log", replace
