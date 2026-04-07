@@ -39,12 +39,8 @@ ren sz_* *
 
 
 *** settlement 
-
-
-gen ksh4_bpker_mother = notart
-replace ksh4_bpker_mother = nolak if ksh4_bpker_mother == .
-gen ksh4_bpker_father = fitart
-replace ksh4_bpker_father = filak if ksh4_bpker_father == .
+ren nolak ksh4_bpker_mother
+ren filak ksh4_bpker_father
 
 foreach X in mother father {
 	gen ksh4_`X' = ksh4_bpker_`X'
@@ -102,7 +98,6 @@ ren hazev y_marriage
 foreach X in baby mother father marriage prev {
 	gen tm_`X' = ym(y_`X', m_`X')
 	format tm_`X' %tm
-	gen ty_`X' = yofd(td_`X')
 }
 
 
@@ -162,59 +157,6 @@ save "${temp}/LB_001", replace
 
 use  "${temp}/LB_001", clear
 
-*keep if inrange(y_baby, 1973, .)
-keep if inrange(ty_baby, 2010, .)
+keep if inrange(y_baby, 1973, .)
 
 save "${temp}/LB_002", replace
-
-
-
-
-/*------------------------------------------------------------------------------
-	merge settlement level information
-------------------------------------------------------------------------------*/
-
-
-use "${temp}/tstar_important", clear
-keep if ty == 2018
-drop ty
-keep ksh4_bpker jaras175 mkod2018 rkod2018 CSOK_0000 CSOK_5000 CSOK_all SH_t_1 SH_t_2 SH_t_3 SH_t_4 CSOK_15000 de01 emp_sh_0 emp_sh_1 emp_sh_2 emp_sh_3 emp_sh_4 emp_sh_5 emp_sh_6 emp_sh_7 emp_sh_8 emp_sh_9 subsidy_1_2016_2023 subsidy_2_2016_2023 subsidy_4_2016_2023 subsidy_3_2019_2023 U_2018 ln_income_2018 women_15_49* 
-compress
-tempfile tstar
-save `tstar'
-
-
-
-use "${temp}/LB_002", clear
-
-ren ksh4_bpker_mother ksh4_bpker
-merge m:1 ksh4_bpker using `tstar', nogen keep(1 3)
-
-replace apgar = . if apgar == 99
-replace suly = . if suly == 9999
-replace hossz = . if hossz == 99
-replace thet = . if thet == 99
-
-** thet<37
-gen thet2 = thet-2
-gen bef37w = thet2<37
-lab var bef37w "Gest. weeks < 37"
-
-gen parents_married = (ty_marriage != .)
-
-gen POST = (ty_baby>2018)
-gen low_weight = (suly < 2500)
-
-gen hungarian = (noallp == 0)
-
-foreach BW in "0000" all 5000 15000 {
-	gen CSOK_`BW'_POST = CSOK_`BW' * POST
-}
-
-gen s_CSOK = subsidy_3 / women_15_49_TSTAR
-gen s_CSOK_POST = s_CSOK * POST
-
-gen ln_de01_2018 = ln(de01)
-
-compress
-save "${temp}/LB_003", replace

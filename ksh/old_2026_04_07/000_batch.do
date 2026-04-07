@@ -58,31 +58,6 @@ if "`c(username)'" == "gyozo" {
 /*
 do "${code}/101_prep_data_LB"
 do "${code}/102_demography"
-do "${code}/103_marriage"
-do "${code}/104_divorce"
-do "${code}/105_internal_migration"
-do "${code}/106_abortion"
-do "${code}/107_tstar_variables"
-
-do "${code}/801_matching_census_LB"
-do "${code}/802_matching_census_LB"
-
-do "${code}/401_census"
-
-do "${code}/901_results_descriptives"
-do "${code}/902_results_stock"
-do "${code}/903_results_flow"
-do "${code}/904_results_LB"
-do "${code}/905_results_municipality"
-
-
-
-
-
-
-
-
-
 do "${code}/103_tstar_variables"
 
 

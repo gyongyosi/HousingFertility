@@ -91,15 +91,58 @@ save "${temp}/census_001", replace
 
 use "${census}/szemely", clear
 
-ren szev ty_mother_birth
+keep szemazon irelo irelsz lcstip hazev cspot enemzv vallasv gakt jc terul lakev_x lakev lakho eterul
 
-keep szemazon irelo irelsz lcstip hazev cspot enemzv mnemzv vallasv gakt jc terul lakev_x lakev lakho eterul ty_mother_birth
+gen ksh4_bpker = int(terul/10)
+gen ksh4 = ksh4_bpker
+
+foreach Y in 956 317 1806 546 1339 1658 2974 2540 2958 1070 1421 2469 2429 1633 1131 820 211 2928 401 602 1318 1021 3413 {
+	replace ksh4 = 1357 if ksh4_bpker == `Y'
+}
 
 
+save "${temp}/mother_characteristics", replace
+
+
+
+
+/*------------------------------------------------------------------------------
+	step 3: merge on mother characteristics	
+		merge on settlement characteristics
+		create variables
+------------------------------------------------------------------------------*/
+
+use "${temp}/tstar_important", clear
+keep if ty == 2018
+foreach X of varlist de* tx* mn* {
+	ren `X' `X'_2018
+}
+tempfile tstar
+save `tstar'
+
+
+
+use "${temp}/census_001", clear
+
+merge m:1 szemazon using "${temp}/mother_characteristics", nogen keep(1 3)
+merge m:1 ksh4 using `tstar', nogen keep(1 3)  
+
+gen mother_age = ty - ty_mother_birth
+
+* settlement level variables
+gen U_2018 = mn01_2018 / de01_2018
+gen I_2018 = (tx02_2018 - tx03_2018) / tx01_2018
+* turn CSOK_0000 variable's entries for non-eligible settlements from . to 0
+replace CSOK_0000 = 0 if CSOK_0000 == .
+
+
+* MARITAL STATUS
+gen married = (cspot==2 & ty>hazev)
+* gen 2019 dummy
+gen marriedBy2019 = (cspot==2 & hazev<2019)
 
 * ETHNICITY: binary variable for Hungarian ethnicities
 gen hungarian = (enemzv>=100 & enemzv<200)
-gen roma = (inrange(enemzv, 300, 399) | inrange(mnemzv, 300, 399))
 
 * RELIGION
 * base case (=0) is no response + others not listed here
@@ -139,7 +182,12 @@ gen young = .
 replace young = 1 if inrange(ty_mother_birth, 1989, .)
 replace young = 0 if inrange(ty_mother_birth, ., 1988)
 
+gen tmp_kids_by_2018 = C_children if ty == 2018
+egen kids_by_2018 = mean(tmp_kids_by_2018), by(szemazon)
+drop tmp_kids_by_2018 
 
+cap drop POST_2019
+gen POST_2019 = (ty >= 2020)
 
 gen cohort5 = .
 forval i = 1965(5)2005 {
@@ -147,89 +195,12 @@ forval i = 1965(5)2005 {
 	replace cohort5 = `i' if inrange(ty_mother_birth, `i', `j')
 }
 
-compress
-save "${temp}/mother_characteristics", replace
-
-
-
-
-/*------------------------------------------------------------------------------
-	step 3: merge on mother characteristics	
-		merge on settlement characteristics
-		create variables
-------------------------------------------------------------------------------*/
-
-use "${temp}/tstar_important", clear
-keep if ty == 2018
-keep ksh4_bpker jaras175 mkod2018 rkod2018 CSOK_0000 CSOK_5000 CSOK_all SH_t_1 SH_t_2 SH_t_3 SH_t_4 CSOK_15000 de01 emp_sh_0 emp_sh_1 emp_sh_2 emp_sh_3 emp_sh_4 emp_sh_5 emp_sh_6 emp_sh_7 emp_sh_8 emp_sh_9 subsidy_1_2016_2023 subsidy_2_2016_2023 subsidy_4_2016_2023 subsidy_3_2019_2023 U_2018 ln_income_2018 women_15_49* 
-compress
-tempfile tstar
-save `tstar'
-
-use "${temp}/tstar_important", clear
-keep if ty == 2018
-keep ksh4_bpker de01_2018 CSOK_0000
-ren ksh4_bpker Q_ksh4_bpker
-ren de01_2018 Q_de01_2018 
-ren CSOK_0000 Q_CSOK_0000
-compress
-tempfile de01_2018
-save `de01_2018'
-
-
-use "${temp}/census_001", clear
-
-merge m:1 szemazon using "${temp}/mother_characteristics", nogen keep(1 3)
-
-gen mother_age = ty - ty_mother_birth
-
-* MARITAL STATUS
-gen married = (cspot==2 & ty>hazev)
-* gen 2019 dummy
-gen marriedBy2019 = (cspot==2 & hazev<2019)
-
-gen tmp_kids_by_2018 = C_children if ty == 2018
-egen kids_by_2018 = mean(tmp_kids_by_2018), by(szemazon)
-drop tmp_kids_by_2018 
-
-
-* account for moving in the settlement id
-gen ksh5 = terul
-*replace ksh5 = eterul if lakev_x == 1 & ty < lakev 
-
-gen ksh4_bpker = int(ksh5/10)
-gen ksh4 = ksh4_bpker
-
-foreach Y in 956 317 1806 546 1339 1658 2974 2540 2958 1070 1421 2469 2429 1633 1131 820 211 2928 401 602 1318 1021 3413 {
-	replace ksh4 = 1357 if ksh4_bpker == `Y'
-}
-drop ksh5
-
-merge m:1 ksh4_bpker using `tstar', nogen keep(1 3) 
- 
-gen Q_ksh4_bpker = ksh4_bpker
-replace Q_ksh4_bpker = int(eterul/10) if lakev_x == 1 & ty < lakev 
-merge m:1 Q_ksh4_bpker using `de01_2018', nogen keep(1 3)  
-
-/*
-* settlement level variables
-gen U_2018 = mn01_2018 / de01_2018
-gen I_2018 = (tx02_2018 - tx03_2018) / tx01_2018
-* turn CSOK_0000 variable's entries for non-eligible settlements from . to 0
-replace CSOK_0000 = 0 if CSOK_0000 == .
-*/
-
-
 
 lab var edu_1 "Primary school"
 lab var edu_2 "Vocational school"
 lab var edu_3 "High school"
 lab var edu_4 "College"
 lab var mother_age "Age"
-
-cap drop POST_2019
-gen POST_2019 = (ty >= 2020)
-
 
 save "${temp}/census_002", replace
 keep if inrange(mother_age, 15, 49)
@@ -254,9 +225,9 @@ merge m:1 szemazon using "${temp}/matchesAll"
 drop if _merge==2
 * save the census entries that do NOT match to LB and therefore won't be updated
 preserve
-	keep if _merge==1
-	drop _merge
-	save "${temp}/censusNoMomID", replace
+keep if _merge==1
+drop _merge
+save "${temp}/censusNoMomID", replace
 restore
 * save the census entries that do match to LB
 keep if _merge==3
@@ -308,15 +279,8 @@ replace N_childrenNEW=1 if N_childrenNEW > 4
 bysort szemazon : gen C_childrenNEW = sum(N_childrenNEW)
 tab N_childrenNEW
 tab C_childrenNEW
-
-keep if inrange(ty, 2010, .)
-
 * save this for regressions
 save "${temp}/census_002_trim_updated", replace
-
-
-
-
 
 /*==============================================================================
 	RURAL CSOK -- DiD
@@ -327,7 +291,7 @@ save "${temp}/census_002_trim_updated", replace
 	balance table
 ------------------------------------------------------------------------------*/
 
-use "${temp}/census_002_trim_updated", clear
+use "${temp}/census_002", clear
 
 keep if ty == 2018
 keep if inrange(mother_age, 15, 49)
@@ -366,7 +330,7 @@ foreach BW in 0000 /* 2000 3000 4000 */ 5000  {
 ------------------------------------------------------------------------------*/
 
 
-use "${temp}/census_002_trim_updated", clear
+use "${temp}/census_002", clear
 
 keep if inrange(mother_age, 15, 49)
 keep if ty == 2018
@@ -421,7 +385,7 @@ reghdfe N_children i.CSOK_0##ib2019.ty if inrange(ty, 2014, .) & CSOK_5 != ., ab
 * !!!!
 */
 
-use "${temp}/census_002_trim_updated", clear
+use "${temp}/census_002", clear
 
 keep if inrange(mother_age, 15, 49)
 
@@ -672,7 +636,7 @@ foreach BW in 5000  /* 0000 2000 3000 4000 5000 */ {
 	prepare data (create a cross section of women)
 ------------------------------------------------------------------------------*/
 
-use "${temp}/census_002_trim_updated", clear
+use "${temp}/census_002", clear
 
 
 
@@ -1092,7 +1056,7 @@ esttab, keep(1.CSOK*#1.POST)
 	RDD figures
 ------------------------------------------------------------------------------*/
 
-use "${temp}/census_002_trim_updated", clear
+use "${temp}/census_002", clear
 
 
 

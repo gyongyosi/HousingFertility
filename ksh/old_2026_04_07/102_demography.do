@@ -10,7 +10,8 @@ use "${demography}/Nepesseg_Kutatoszoba_1970-2020_-_jan1", clear
 append using "${demography}/Nepesseg_Kutatoszoba_2021_-_jan1"
 append using "${demography}/Nepesseg_Kutatoszoba_2022_-_jan1"
 append using "${demography}/Nepesseg_Kutatoszoba_2023_-_jan1"
-append using "${demography}/Nepesseg_Kutatoszoba_2024_-_jan1"
+
+replace esev = 2023 if esev == 2024
 
 
 ren esev ty 
@@ -28,17 +29,17 @@ foreach Y in 956 317 1806 546 1339 1658 2974 2540 2958 1070 1421 2469 2429 1633 
 	replace ksh4 = 1357 if ksh4_bpker == `Y'
 }
 
-save "${temp}/demography_1970_2024", replace
+save "${temp}/demography_1970_2023", replace
 
 
 
 
-use "${temp}/demography_1970_2024", clear
+use "${temp}/demography_1970_2023", clear
 
 keep if inrange(age, 15, 49)
 keep if gender == 2
 
-save "${temp}/demography_1970_2024_women", replace
+save "${temp}/demography_1970_2023_women", replace
 
 
 
