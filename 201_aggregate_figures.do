@@ -36,8 +36,69 @@ graph export ${output}/TFR_Hungary.pdf, as(pdf) replace
 
 
 
+/*------------------------------------------------------------------------------
+	aggregate HUN house price -- source MNB
+------------------------------------------------------------------------------*/
 
 
+
+clear
+import excel using ${hp_MNB}/MNB_lakasarindex_2025Q2.xlsx, sheet("1.2") cellrange(b4)
+
+
+
+ren B q
+ren C HP
+ren D HP_Budapest
+ren E HP_cities
+ren F HP_cities_southern_great_plain
+ren G HP_cities_southern_transdanubia
+ren H HP_cities_northern_great_plain
+ren I HP_cities_northern_hungary
+ren J HP_cities_central_transdanubia
+ren K HP_cities_Pest
+ren L HP_cities_western_transdanubia
+ren M HP_villages
+
+drop in 1
+
+drop if HP == .
+
+gen tq = _n + 120 - 1
+format tq %tq
+order tq
+drop q
+
+foreach X of varlist HP* {
+	cap replace `X' = "" if `X' == "-"
+	destring `X', replace
+}
+
+gen ty = yofd(dofq(tq))
+
+
+gen tmp_HP_2000q1 = HP if tq == 160
+egen HP_2000q1 = mean(tmp_HP_2000q1)
+
+replace HP = HP / HP_2000q1 * 100
+
+#d ;
+	line HP tq if ty >= 2000, 
+		graphregion(color(white))
+		xtitle("")
+		ytitle("Inflation adjusted house price index (2000q1 = 100)")
+		xline(222 238)
+		;
+#d cr
+graph export ${output}/HP_Hungary.pdf, as(pdf) replace
+
+
+
+
+
+/*------------------------------------------------------------------------------
+	aggregate new building 
+------------------------------------------------------------------------------*/
 
 
 

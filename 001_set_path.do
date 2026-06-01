@@ -19,6 +19,7 @@ global disadv ${data}/komplex_mutato_2014/04_final
 global village_csok ${data}/village_csok
 
 global hp ${data}/house_price/04_final
+global hp_MNB ${data}/House_price_MNB/01_original/
 
 global human_fertility ${data}/human_fertility
 global tfr_worldbank ${data}/TFR_Worldbank/01_original
