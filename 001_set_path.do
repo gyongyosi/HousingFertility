@@ -21,6 +21,7 @@ global village_csok ${data}/village_csok
 global hp ${data}/house_price/04_final
 
 global human_fertility ${data}/human_fertility
+global tfr_worldbank ${data}/TFR_Worldbank/01_original
 
 
 

@@ -1,4 +1,44 @@
 
+/*------------------------------------------------------------------------------
+	aggregate HUN TFR
+------------------------------------------------------------------------------*/
+
+
+clear
+import delimited ${tfr_worldbank}/API_SP.DYN.TFRT.IN_DS2_en_csv_v2_230.csv, rowrange(3) varnames(3)
+
+forval i = 5(1)70 {
+	local j = `i' + 1955
+	ren v`i' y_`j'
+}
+
+ren lastupdateddate country_name
+ren v2 country_code
+ren v3 indicator_name
+ren v4 indicator_code
+
+drop in 1
+
+reshape long y_, i(country* indicator*) j(ty)
+ren y_ TFR
+
+#d ;
+	line TFR ty if country_name == "Hungary" & inrange(ty, 2000, .),
+		graphregion(color(white))
+		xtitle("")
+		ytitle("Total fertility rate")
+		lcolor("$color1")
+		xline(2015 2019)
+		;
+	
+#d cr
+graph export ${output}/TFR_Hungary.pdf, as(pdf) replace
+
+
+
+
+
+
 
 
 use ${live_births}/live_births, clear
