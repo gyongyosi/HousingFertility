@@ -88,6 +88,7 @@ replace HP = HP / HP_2000q1 * 100
 		xtitle("")
 		ytitle("Inflation adjusted house price index (2000q1 = 100)")
 		xline(222 238)
+		lcolor("$color1")
 		;
 #d cr
 graph export ${output}/HP_Hungary.pdf, as(pdf) replace
@@ -99,6 +100,23 @@ graph export ${output}/HP_Hungary.pdf, as(pdf) replace
 /*------------------------------------------------------------------------------
 	aggregate new building 
 ------------------------------------------------------------------------------*/
+
+use ${tstar}/la, clear
+
+collapse (sum) la*, by(ev)
+
+#d ;
+	line la02 ev if ev >= 2000, 
+		graphregion(color(white))
+		xtitle("")
+		ytitle("Number of flats built ")
+		xline(222 238)
+		lcolor("$color1")
+		;
+#d cr
+graph export ${output}/flats_built_Hungary.pdf, as(pdf) replace
+
+
 
 
 
