@@ -1,0 +1,78 @@
+
+  ___  ____  ____  ____  ____ (R)
+ /__    /   ____/   /   ____/
+___/   /   /___/   /   /___/   16.0   Copyright 1985-2019 StataCorp LLC
+  Statistics/Data Analysis            StataCorp
+                                      4905 Lakeway Drive
+                                      College Station, Texas 77845 USA
+                                      800-STATA-PC        http://www.stata.com
+                                      979-696-4600        stata@stata.com
+                                      979-696-4601 (fax)
+
+3-user Stata network perpetual license:
+       Serial number:  501606211877
+         Licensed to:  Gyozo
+                       Utrecht
+
+Notes:
+      1.  Stata is running in batch mode.
+      2.  Unicode is supported; see help unicode_advice.
+
+. do 205_cross_country_figure.do 
+
+. // Cross-country scatter: affordability change vs TFR change, 2010–2019
+. // Data: cross_country_affordability.csv
+. // Output: cross_country_affordability_tfr.pdf
+. 
+. global DB   "/home/gyozo/Dropbox"
+
+. global root "${DB}/_babavaro"
+
+. global cc_data "${root}/data/cross_country"
+
+. global fig     "${root}/output"
+
+. 
+. // Colors
+. local c1  "17 112 170"    // countries – blue
+
+. local c2  "252 125 11"    // Hungary – orange
+
+. local c4  "87 96 108"     // OLS line – dark grey
+
+. 
+. // Load data
+. import delimited "${cc_data}/cross_country_affordability.csv", ///
+>     stringcols(1 2) clear
+(4 vars, 39 obs)
+
+. 
+. 
+. #delimit ;
+delimiter now ;
+. twoway
+>     (scatter dtfr dpti,
+>         msymbol(none)
+>         mlabel(iso3) mlabpos(0) mlabsize(vsmall) mlabcolor("`c1'"))
+>     (lfit dtfr dpti,
+>         lcolor("`c4'") lpattern(dash) lwidth(thin))
+>     ,
+>     xline(0, lcolor(gs14) lwidth(thin))
+>     yline(0, lcolor(gs14) lwidth(thin))
+>     ylabel(-0.6(0.2)0.4, format(%3.1f) labsize(small))
+>     xlabel(-80(20)40, labsize(small))
+>     xtitle("Change in price-to-income ratio, 2010-2019", size(small))
+>     ytitle("Change in TFR, 2010-2019", size(small))
+>     legend(off)
+>     graphregion(color(white)) plotregion(color(white))
+>     ;
+
+. #delimit cr
+delimiter now cr
+. 
+. graph export "${fig}/cross_country_affordability_tfr.pdf", as(pdf) replace
+(file /home/gyozo/Dropbox/_babavaro/output/cross_country_affordability_tfr.pdf 
+> written in PDF format)
+
+. 
+end of do-file
