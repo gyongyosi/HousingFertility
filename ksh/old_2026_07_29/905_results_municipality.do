@@ -14,7 +14,7 @@
 
 global cc_1_post " c.ln_income_2018##i.POST c.U_2018##i.POST c.SH_t_1##i.POST c.SH_t_2##i.POST c.SH_t_3##i.POST c.SH_t_4##i.POST  c.ln_women_18_plus_TSTAR##i.POST" 
 * c.ln_women_18_plus_TSTAR##i.POST " 
-global cc_1_ty  " c.ln_income_2018##i.ty c.U##i.ty  c.SH_t_1##i.ty c.SH_t_2##i.ty c.SH_t_3##i.ty c.SH_t_4##i.ty c.ln_women_18_plus_TSTAR##i.ty"
+global cc_1_ty  " c.ln_income_2018##i.ty c.U##i.ty c.ln_women_18_plus_TSTAR##i.ty"
  /* c.ln_women_18_plus_2018##i.ty */
  
 global cc_2_post "i.rkod##i.POST"
@@ -29,7 +29,7 @@ global cc_4_ty "i.jaras##i.ty"
 
   
   
-** all marriages
+  
 foreach BW in "0000" 5000 15000 {
 	
 	use "${temp}/settlement_level_002", clear
@@ -83,59 +83,6 @@ foreach BW in "0000" 5000 15000 {
 	#d cr	
 
 }
-
-*** marriages 15-39
-
-
-	
-foreach BW in /* "0000" 5000 */ 15000 {
-	
-	use "${temp}/settlement_level_002", clear
-
-	keep if inrange(ty, 2014, .)
-	keep if inrange(de01_2018, 0, 20000)
-	keep if CSOK_`BW' != .
-
-	
-	eststo clear
-	eststo q_1 : reghdfe SH_marriage_age_15_39 CSOK_`BW'_POST  [aw = women_18_plus_TSTAR_2018] , absorb(ksh4 ty) cluster(ksh4)
-		estadd local muni_fe "Yes"
-		  
-	eststo q_2 : reghdfe SH_marriage_age_15_39 CSOK_`BW'_POST   [aw = women_18_plus_TSTAR_2018], absorb(ksh4 ty $cc_1_post) cluster(ksh4)
-		estadd local muni_fe "Yes"
-		estadd local controls "Yes"
-
-	eststo q_3 : reghdfe SH_marriage_age_15_39 CSOK_`BW'_POST   [aw = women_18_plus_TSTAR_2018], absorb(ksh4 ty $cc_1_post $cc_2_post) cluster(ksh4)
-		estadd local muni_fe "Yes"
-		estadd local controls "Yes"
-		estadd local region "Yes"  
-		
-	eststo q_4 :  reghdfe SH_marriage_age_15_39 CSOK_`BW'_POST     [aw = women_18_plus_TSTAR_2018], absorb(ksh4 ty $cc_1_post   $cc_3_post  ) cluster(ksh4)
-		estadd local muni_fe "Yes"
-		estadd local controls "Yes"
-		estadd local county "Yes"	
-		
-		
-	eststo q_5 :  reghdfe SH_marriage_age_15_39  CSOK_`BW'_POST     [aw = women_18_plus_TSTAR_2018], absorb(ksh4 ty $cc_1_post  $cc_4_post ) cluster(ksh4)
-		estadd local muni_fe "Yes"
-		estadd local controls "Yes"
-		estadd local subregion "Yes"	
-
-	esttab
-}
-
-
-
-reghdfe SH_marriage_age_15_39  i.CSOK_15000##ib2019.ty     [aw = women_18_plus_TSTAR_2018], absorb(ksh4 ty  ) cluster(ksh4)
-
-
-
-
-
-
-
-
-
 
 
 

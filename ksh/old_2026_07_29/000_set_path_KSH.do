@@ -10,8 +10,6 @@ global LB x:\INPUT_KSH\Elveszuletes\
 global census x:\INPUT_KSH\Nepszamlalas\2022\
 global census_2011 x:\INPUT_KSH\Nepszamlalas\2011\
 global internal_migration x:\INPUT_KSH\Belfoldi_vandorlas\
-global microcensus x:\INPUT_KSH\Mikrocenzus\Mikrocenzus 2016\STATA\
-
 global demography "x:\INPUT_MTA\KÖZÖS\Demografia\"
 global abortion "x:\INPUT_KSH\Terhessegmegszakitas\"
 
@@ -26,17 +24,11 @@ global tstar "x:\INPUT_MTA\KÖZÖS\Tstar\T-star (aktuális)"
 global map x:\INPUT_MTA\KÖZÖS\térkép fájlok\Shape
 global maptile_geolist ${code}/ado_personal/maptile_geographies
 global csok "x:\PROJECTS\Project37_A magyarországi családpolitikák fertilitásra gyakorolt hatásának vizsgálata\GYGY\data\village_csok\"
-
-global hp "X:\INPUT_KSH\Ingatlanpiaci adatok 2007-2024"
-global hp_aggr "X:\PROJECTS\Project37_A magyarországi családpolitikák fertilitásra gyakorolt hatásának vizsgálata\GYGY\data\hp\"
-
+global hp "X:\PROJECTS\Project37_A magyarországi családpolitikák fertilitásra gyakorolt hatásának vizsgálata\GYGY\data\hp\"
 global election "x:\PROJECTS\Project37_A magyarországi családpolitikák fertilitásra gyakorolt hatásának vizsgálata\GYGY\data\election"
 
 global agglomeration "x:\INPUT_MTA\KÖZÖS\"
 global fc "x:\PROJECTS\Project37_A magyarországi családpolitikák fertilitásra gyakorolt hatásának vizsgálata\GYGY\data\fc\"
-
-global tel_to_tel_dist "x:\INPUT_MTA\KÖZÖS\Telepules_adatok\"
-
 
 /*------------------------------------------------------------------------------
 	color scheme
@@ -61,16 +53,12 @@ global color10      "200 208 217"
 ------------------------------------------------------------------------------*/
 
 
-global x0_f "ksh4 ty"
+global x0_f "ksh4_bpker ty"
 global x0_s "szemazon ty"
 
 
-global x1 " ty_mother_birth i.eduCatg i.relCatg i.ethCatg marriedBy2019 kidsBy2019 "
-global x2 "c.P_U_2018_cts c.P_ln_income_2018_cts c.P_SH_t_1 c.P_SH_t_2 c.P_SH_t_3 c.P_SH_t_4"
-
-global x1_microcensus " ty_mother_birth i.eduCatg i.ethCatg marriedBy2013 kidsBy2013 "
-global x2_microcensus "c.P_U_2012 c.P_ln_income_2012 c.P_SH_t_1 c.P_SH_t_2 c.P_SH_t_3 c.P_SH_t_4"
-
+global x1 " ty_mother_birth i.eduCatg i.relCatg hungarian roma marriedBy2019 kids_by_2018 "
+global x2 "U_2018 ln_income_2018 SH_t_1 SH_t_2 SH_t_3 SH_t_4"
 
 
 global x1_post "i.ty_mother_birth##i.POST i.eduCatg##i.POST i.relCatg##i.POST i.hungarian##i.POST i.roma##i.POST i.marriedBy2019##i.POST i.kids_by_2018##i.POST"

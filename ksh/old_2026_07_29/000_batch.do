@@ -1,0 +1,99 @@
+dis "`c(username)'"
+
+
+
+if "`c(username)'" == "mta37_766" {
+	
+	
+	global root "x:\PROJECTS\Project37_A magyarországi családpolitikák fertilitásra gyakorolt hatásának vizsgálata\GYGY"
+	global code "${root}\code\"
+	global temp "${root}\temp\"
+	global output "${root}/output"
+	global log "${root}/output/log"
+	
+	sysdir set PERSONAL "x:\PROJECTS\Project37_A magyarországi családpolitikák fertilitásra gyakorolt hatásának vizsgálata\GYGY\code\ado_personal\"
+	
+	
+	do "${code}/000_set_path_KSH"
+}
+
+
+
+if "`c(username)'" == "mta37_529" {
+	
+	
+	global root "x:\PROJECTS\Project37_A magyarországi családpolitikák fertilitásra gyakorolt hatásának vizsgálata\GYGY"
+	global code "${root}\code\"
+	global temp "${root}\temp\"
+	global output "${root}/output"
+	global log "${root}/output/log"
+	
+	sysdir set PERSONAL "x:\PROJECTS\Project37_A magyarországi családpolitikák fertilitásra gyakorolt hatásának vizsgálata\GYGY\code\ado_personal\"
+	
+	
+	do "${code}/000_set_path_KSH"
+}
+
+
+
+if "`c(username)'" == "gyozo" {
+
+	global DB "/home/gyozo/Dropbox"
+	global root ${DB}/_babavaro
+	global code /home/gyozo/GitHub/HousingFertility/ksh
+
+	sysdir set PERSONAL /home/gyozo/ado/personal/
+	sysdir set PLUS "/home/gyozo/ado/plus/"
+	
+	
+	do ${code}/001_set_path_dropbox
+}
+
+
+
+/*------------------------------------------------------------------------------
+	run the batch
+------------------------------------------------------------------------------*/
+
+/*
+do "${code}/101_prep_data_LB"
+do "${code}/102_demography"
+do "${code}/103_marriage"
+do "${code}/104_divorce"
+do "${code}/105_internal_migration"
+do "${code}/106_abortion"
+do "${code}/107_tstar_variables"
+
+do "${code}/801_matching_census_LB"
+do "${code}/802_matching_census_LB"
+
+do "${code}/401_census"
+
+do "${code}/901_results_descriptives"
+do "${code}/902_results_stock"
+do "${code}/903_results_flow"
+do "${code}/904_results_LB"
+do "${code}/905_results_municipality"
+
+
+
+
+
+
+
+
+
+do "${code}/103_tstar_variables"
+
+
+
+
+*/
+
+
+
+
+
+
+
+

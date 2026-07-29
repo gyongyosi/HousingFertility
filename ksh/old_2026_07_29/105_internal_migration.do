@@ -111,12 +111,12 @@ foreach X of varlist out_ksh4 in_ksh4 {
 
 	
 	ren `X' ksh4
-	merge m:1 ksh4  using `tstar', nogen keep(1 3) keepusing(de01 tx01 tx02 tx03 mn01 CSOK_0000_all CSOK_5000 CSOK_15000 CSOK_all mkod2018)
+	merge m:1 ksh4  using `tstar', nogen keep(1 3) keepusing(de01 tx01 tx02 tx03 mn01 CSOK_0000 CSOK_5000 CSOK_15000 mkod2018)
 	
 	ren ksh4 `X'
 
 		
-	foreach Y of varlist de01 tx01 tx02 tx03 mn01 CSOK_0000_all CSOK_5000 CSOK_15000 CSOK_all mkod2018 {
+	foreach Y of varlist de01 tx01 tx02 tx03 mn01 CSOK_0000 CSOK_5000 CSOK_15000 mkod2018 {
 		ren `Y' `direction'_`Y'
 	}
 }
@@ -147,38 +147,7 @@ save "${temp}/internal_migration_01", replace
 
 use "${temp}/internal_migration_01", clear
 
-keep if inrange(ty, 2005, .)
+keep if inrange(ty, 2007, .)
 
 save "${temp}/internal_migration_02", replace
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

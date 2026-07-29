@@ -110,7 +110,7 @@ collapse (sum) la*, by(ev)
 		graphregion(color(white))
 		xtitle("")
 		ytitle("Number of flats built ")
-		xline(222 238)
+		xline(2015 2019)
 		lcolor("$color1")
 		;
 #d cr

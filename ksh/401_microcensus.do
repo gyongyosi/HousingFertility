@@ -6,18 +6,22 @@
 	dataset 1: women-year-level panel
 ------------------------------------------------------------------------------*/
 
-local mother_born_lower = 1961
-local mother_born_upper = 2010
+local mother_born_lower = 1955
+local mother_born_upper = 2004
 
 clear
 set obs 3000
-gen ty = _n if inrange(_n, 1976, 2024)
+gen ty = _n if inrange(_n, 1970, 2018)
 drop if ty == .	
 tempfile timeframe
 save `timeframe'
 
-use "${census}/szemely", clear
+use "${microcensus}/szemely_2016_MTA", clear
+
+egen szemazon = group(azon szsor)
+
 count 
+destring neme, replace
 keep if neme == 2
 count 
 
@@ -37,13 +41,12 @@ gen tm_child_2 = ym(maszev, maszho)
 gen tm_child_3 = ym(haszev, haszho)
 gen tm_child_4 = ym(neszev, neszho)
 gen tm_child_5 = ym(otszev, otszho)
-gen tm_child_6 = ym(szev6, ho6)
-gen tm_child_7 = ym(szev7, ho7)
-gen tm_child_8 = ym(szev8, ho8)
-gen tm_child_9 = ym(szev9, ho9)
-gen tm_child_10 = ym(uszev, uszho)
+forval i = 6(1)15 {
+		gen tm_child_`i' = ym(SZEV`i', HO`i')
+}
+
 * format monthly version
-forval i = 1(1)10 {
+forval i = 1(1)15 {
 	format tm_child_`i' %tm
 }
 * yearly version of child birth dates
@@ -52,11 +55,9 @@ gen ty_child_2 = maszev
 gen ty_child_3 = haszev
 gen ty_child_4 = neszev
 gen ty_child_5 = otszev
-gen ty_child_6 = szev6
-gen ty_child_7 = szev7
-gen ty_child_8 = szev8
-gen ty_child_9 = szev9
-gen ty_child_10 = uszev
+forval i = 6(1)15 {
+	gen ty_child_`i' = SZEV`i'
+}
 
 * keep relevant vars 
 keep szemazon td* tm* ty*
@@ -66,7 +67,7 @@ cross using `timeframe'
 * regression outcomes: flow and stock of children
 gen N_children = 0
 sort szemazon ty 
-forval i = 1(1)10 {
+forval i = 1(1)15 {
 	replace N_children = N_children + 1 if ty_child_`i' == ty
 }
 * fix strangely high tuplets
@@ -77,16 +78,26 @@ tab N_children
 tab C_children
 * save 
 compress
-save "${temp}/census_001", replace
+save "${temp}/microcensus_001", replace
+
+
+
 
 /*------------------------------------------------------------------------------
 	dataset 2: women-level (time-invariant) characteristics
 ------------------------------------------------------------------------------*/
 
-use "${census}/szemely", clear
+use "${microcensus}/szemely_2016_MTA", clear
+
+egen szemazon = group(azon szsor)
+
+ren LAKEV_X lakev_x
+destring lakev_x, replace
+replace lakev_x = 1 if lakev_x == .
+
 ren szev ty_mother_birth
 * keep variables of interest, including moving variables
-keep szemazon irelo irelsz lcstip hazev cspot enemzv mnemzv vallasv gakt jc terul lakev_x lakev lakho eterul ty_mother_birth
+keep szemazon irelo irelsz lcstip hazev cspot enemzv mnemzv /* vallasv */ gakt jc terul lakev_x lakev lakho eterul ty_mother_birth
 
 ** create time-invariant controls: age, education, ethnicity, religion
 
@@ -103,6 +114,7 @@ replace young = 1 if inrange(ty_mother_birth, 1989, .)
 replace young = 0 if inrange(ty_mother_birth, ., 1988)
 
 * EDUCATION
+destring irelsz, replace
 gen eduCatg = 0
 * no secondary school
 replace eduCatg = 1 if inlist(irelsz,0,1)
@@ -118,6 +130,8 @@ gen eduHigh = inlist(irelsz,5,6,7,8,9,10)
 tab eduCatg, gen(edu_)
 
 * ETHNICITY: binary variable for Hungarian ethnicities
+destring enemzv, replace
+destring mnemzv, replace
 gen hungarian = (enemzv>=100 & enemzv<200)
 gen roma = (inrange(enemzv, 300, 399) | inrange(mnemzv, 300, 399))
 * base case (=0) is other
@@ -129,6 +143,7 @@ replace ethCatg = 2 if roma==1
 
 * RELIGION
 * base case (=0) is no response + others not listed here
+/*
 gen relCatg = 0 
 * Catholic
 replace relCatg = 1 if inlist(vallasv,100,111,200,300,311,400,410,420,440,480,510,530)
@@ -140,22 +155,30 @@ replace relCatg = 3 if inlist(vallasv,1200,1210,1211,1220)
 replace relCatg = 4 if inlist(vallasv,0,50,51)
 ** create binary version
 gen relXn = inlist(relCatg,1,2,3)
+*/
 
 compress
-save "${temp}/mother_characteristics", replace
+save "${temp}/microcensus_mother_characteristics", replace
+
+
+
+
+
+
+
 
 
 /*------------------------------------------------------------------------------
-	dataset 3: 2018 settlement-level T-STAR vars into tempfile tstar --> 2022 loc ksh4_bpker
+	dataset 3: 2014 settlement-level T-STAR vars into tempfile tstar --> 2022 loc ksh4_bpker
 ------------------------------------------------------------------------------*/
 
-local tVarsToKeep ksh4_bpker jaras175 mkod2018 rkod2018 CSOK_* SH_t_1 SH_t_2 SH_t_3 SH_t_4 de01 de01_2018 emp_sh_0 emp_sh_1 emp_sh_2 emp_sh_3 emp_sh_4 emp_sh_5 emp_sh_6 emp_sh_7 emp_sh_8 emp_sh_9 subsidy_1_2016_2023 subsidy_2_2016_2023 subsidy_4_2016_2023 subsidy_3_2019_2023 U_2018* ln_income_2018* hsShare_2018* women_15_49*
+local tVarsToKeep ksh4_bpker jaras175 mkod2018 rkod2018 CSOK_* SH_t_1 SH_t_2 SH_t_3 SH_t_4 de01 de01_2012 de01_2018  emp_sh_0 emp_sh_1 emp_sh_2 emp_sh_3 emp_sh_4 emp_sh_5 emp_sh_6 emp_sh_7 emp_sh_8 emp_sh_9 subsidy_1_2016_2023 subsidy_2_2016_2023 subsidy_4_2016_2023 subsidy_3_2019_2023 U_2012* ln_income_2012* hsShare_2012* women_15_49*
 
 
 * load T-STAR data from 100 code file
 use "${temp}/tstar_important", clear
 * get 2018 snapshot (pre-treatment)
-keep if ty == 2018
+keep if ty == 2014
 * vars that we want to attach
 keep `tVarsToKeep'
 * save into temp file for merging soon
@@ -164,13 +187,13 @@ tempfile tstar
 save `tstar'
 
 /*------------------------------------------------------------------------------
-	dataset 4: 2018 settlement-level T-STAR vars into tempfile qtstar --> time-varying loc Q_ksh4_bpker
+	dataset 4: 2014 settlement-level T-STAR vars into tempfile qtstar --> time-varying loc Q_ksh4_bpker
 ------------------------------------------------------------------------------*/
 
 * save 2018 pop in different temp file bc will merge on moving-adjusted settlement
 use "${temp}/tstar_important", clear
 * get 2018 snapshot (pre-treatment)
-keep if ty == 2018
+keep if ty == 2014
 * vars that we want to attach
 keep `tVarsToKeep'
 * rename these variables with "Q_" prefixes
@@ -181,13 +204,13 @@ tempfile qtstar
 save `qtstar'
 
 /*------------------------------------------------------------------------------
-	dataset 5: 2018 settlement-level T-STAR vars into tempfile ptstar --> 2018 loc P_ksh4_bpker
+	dataset 5: 2014 settlement-level T-STAR vars into tempfile ptstar --> 2018 loc P_ksh4_bpker
 ------------------------------------------------------------------------------*/
 
 * save 2018 pop in different temp file bc will merge on moving-adjusted settlement
 use "${temp}/tstar_important", clear
 * get 2018 snapshot (pre-treatment)
-keep if ty == 2018
+keep if ty == 2014
 * vars that we want to attach
 keep `tVarsToKeep'
 * rename these variables with "Q_" prefixes
@@ -197,28 +220,37 @@ compress
 tempfile ptstar
 save `ptstar'
 
+
+
+
+
+
+
+
 /*------------------------------------------------------------------------------
 	merge all 5 datasets
 ------------------------------------------------------------------------------*/
 
 * load census panel
-use "${temp}/census_001", clear
+use "${temp}/microcensus_001", clear
 * merge 1 of 4: merge with woman-level characteristics
-merge m:1 szemazon using "${temp}/mother_characteristics", nogen keep(1 3)
+merge m:1 szemazon using "${temp}/microcensus_mother_characteristics", nogen keep(1 3)
 
 ** create some time-varying variables
 * AGE
 gen mother_age = ty - ty_mother_birth
 * MARITAL STATUS
+destring cspot, replace
 gen married = (cspot==2 & ty>hazev)
 * gen 2019 dummy
-gen marriedBy2019 = (cspot==2 & hazev<2019)
+gen marriedBy2013 = (cspot==2 & hazev<2013)
 * NUM KIDS
-gen tmp_kids_by_2019 = C_children if ty == 2018
-egen kidsBy2019 = mean(tmp_kids_by_2019), by(szemazon)
-drop tmp_kids_by_2019
+gen tmp_kids_by_2013 = C_children if ty == 2012
+egen kidsBy2013 = mean(tmp_kids_by_2013), by(szemazon)
+drop tmp_kids_by_2013
 
 * account for moving in the settlement id
+destring eterul, replace
 gen prev_ksh5 = eterul
 gen prev_ksh4_bpker = int(prev_ksh5/10)
 gen prev_ksh4 = prev_ksh4_bpker
@@ -228,6 +260,8 @@ foreach Y in 956 317 1806 546 1339 1658 2974 2540 2958 1070 1421 2469 2429 1633 
 }
 drop prev_ksh5
 
+
+destring terul, replace
 gen ksh5 = terul
 *replace ksh5 = eterul if lakev_x == 1 & ty < lakev // NOT using, see instead the same condiion a few lines below
 gen ksh4_bpker = int(ksh5/10)
@@ -239,6 +273,9 @@ foreach Y in 956 317 1806 546 1339 1658 2974 2540 2958 1070 1421 2469 2429 1633 
 drop ksh5
 * merge 2 of 4: merge in T-STAR for 2022 settlement
 merge m:1 ksh4_bpker using `tstar', nogen keep(1 3) 
+
+
+destring lakev_x, replace
 
 * merge 3 of 4: merge in T-STAR for MOVING-ADJUSTED TIME-VARYING settlement
 gen Q_ksh4_bpker = ksh4_bpker
@@ -253,7 +290,7 @@ foreach Y in 956 317 1806 546 1339 1658 2974 2540 2958 1070 1421 2469 2429 1633 
 }
 
 * merge 4 of 4: merge in T-STAR for 2018 settlement
-gen P_ksh4_bpker_tmp = Q_ksh4_bpker if ty==2018
+gen P_ksh4_bpker_tmp = Q_ksh4_bpker if ty==2012
 * panel is still balanced so no missing vals here
 egen P_ksh4_bpker = mode(P_ksh4_bpker_tmp), by(szemazon)
 drop P_ksh4_bpker_tmp
@@ -265,14 +302,17 @@ foreach Y in 956 317 1806 546 1339 1658 2974 2540 2958 1070 1421 2469 2429 1633 
 	replace P_ksh4 = 1357 if P_ksh4_bpker == `Y'
 }
 
-* did you move in 2019 or after?
-gen mover = lakev_x==1 & lakev>=2019 
+
+
+
+* did you move in 2013 or after?
+gen mover = lakev_x==1 & lakev>=2013 
 * if so, what was the year of zour move?
 gen mover_year = lakev if mover==1
-* did you move within settlement in 2019 or after?
-gen mover_sameSett = (lakev_x==1 & lakev>=2019 & ksh4==prev_ksh4)
-* did you move across settlement in 2019 or after?
-gen mover_newSett = (lakev_x==1 & lakev>=2019 & ksh4!=prev_ksh4)
+* did you move within settlement in 2013 or after?
+gen mover_sameSett = (lakev_x==1 & lakev>=2013 & ksh4==prev_ksh4)
+* did you move across settlement in 2013 or after?
+gen mover_newSett = (lakev_x==1 & lakev>=2013 & ksh4!=prev_ksh4)
 gen mover_newSett_check = (P_ksh4!=ksh4)
 * checks
 tab mover
@@ -312,11 +352,19 @@ lab var edu_3 "High school"
 lab var edu_4 "College"
 lab var mother_age "Age"
 
-cap drop POST_2019
-gen POST_2019 = (ty >= 2020)
+*cap drop POST_2013
+*gen POST_2013 = (ty >= 2014)
 
 * save "${temp}/census_002", replace
 count
 keep if inrange(mother_age, 15, 49)
 count
-save "${temp}/census_002_unbal", replace
+save "${temp}/microcensus_002_unbal", replace
+
+
+
+
+
+
+
+
